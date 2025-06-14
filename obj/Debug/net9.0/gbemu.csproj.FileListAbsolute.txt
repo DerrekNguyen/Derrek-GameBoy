@@ -1,0 +1,5 @@
+C:\Users\ACER\Documents\GitHub\Derrek-GameBoy\obj\Debug\net9.0\gbemu.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ACER\Documents\GitHub\Derrek-GameBoy\obj\Debug\net9.0\gbemu.AssemblyInfoInputs.cache
+C:\Users\ACER\Documents\GitHub\Derrek-GameBoy\obj\Debug\net9.0\gbemu.AssemblyInfo.cs
+C:\Users\ACER\Documents\GitHub\Derrek-GameBoy\obj\Debug\net9.0\gbemu.csproj.CoreCompileInputs.cache
+C:\Users\ACER\Documents\GitHub\Derrek-GameBoy\obj\Debug\net9.0\gbemu.sourcelink.json

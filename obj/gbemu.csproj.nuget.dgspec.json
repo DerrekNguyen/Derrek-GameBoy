@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ACER\\Documents\\GitHub\\Derrek-GameBoy\\gbemu\\gbemu.csproj": {}
+    "C:\\Users\\ACER\\Documents\\GitHub\\Derrek-GameBoy\\gbemu.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ACER\\Documents\\GitHub\\Derrek-GameBoy\\gbemu\\gbemu.csproj": {
+    "C:\\Users\\ACER\\Documents\\GitHub\\Derrek-GameBoy\\gbemu.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ACER\\Documents\\GitHub\\Derrek-GameBoy\\gbemu\\gbemu.csproj",
+        "projectUniqueName": "C:\\Users\\ACER\\Documents\\GitHub\\Derrek-GameBoy\\gbemu.csproj",
         "projectName": "gbemu",
-        "projectPath": "C:\\Users\\ACER\\Documents\\GitHub\\Derrek-GameBoy\\gbemu\\gbemu.csproj",
+        "projectPath": "C:\\Users\\ACER\\Documents\\GitHub\\Derrek-GameBoy\\gbemu.csproj",
         "packagesPath": "C:\\Users\\ACER\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ACER\\Documents\\GitHub\\Derrek-GameBoy\\gbemu\\obj\\",
+        "outputPath": "C:\\Users\\ACER\\Documents\\GitHub\\Derrek-GameBoy\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\ACER\\AppData\\Roaming\\NuGet\\NuGet.Config",
