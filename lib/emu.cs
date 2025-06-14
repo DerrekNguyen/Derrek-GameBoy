@@ -30,6 +30,7 @@ public static class Emulator
     }
     public static int Run(String[] argv)
     {
-        Console.WriteLine(argv);
+        Console.WriteLine(argv[0]);
+        return 1;
     }
 }
