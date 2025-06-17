@@ -21,7 +21,7 @@ public class EmuContext
 
 public static class Emulator
 {
-    private static EmuContext _context = new();
+    private static readonly EmuContext _context = new();
     public static EmuContext GetContext() => _context;
 
     public static void Delay(uint ms)
@@ -30,6 +30,10 @@ public static class Emulator
     }
     public static int Run(String[] argv)
     {
+        if (argv.Length < 1)
+        {
+            Console.WriteLine()
+        }
         Console.WriteLine(argv[0]);
         return 1;
     }
