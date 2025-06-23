@@ -1,11 +1,99 @@
 {
   "version": 3,
   "targets": {
-    "net9.0": {}
+    "net9.0": {
+      "SDL2-CS/2.0.0": {
+        "type": "package"
+      },
+      "SdlSharp/0.12.64-alpha": {
+        "type": "package",
+        "dependencies": {
+          "SdlSharp.Redist": "0.11.8-alpha"
+        },
+        "compile": {
+          "lib/net7.0/SdlSharp.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net7.0/SdlSharp.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "SdlSharp.Redist/0.11.8-alpha": {
+        "type": "package",
+        "build": {
+          "build/_._": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "SDL2-CS/2.0.0": {
+      "sha512": "W7T4y+lMs7Wm/94dGggRxJYqxX5N6uuxuxw5ob/H34fnaoUwgoG0s+P7xzqsGXUc1cbCAjnShs21FdeFUnPlHA==",
+      "type": "package",
+      "path": "sdl2-cs/2.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE",
+        "content/net20/SDL2-CS/LPUtf8StrMarshaler.cs",
+        "content/net20/SDL2-CS/SDL2.cs",
+        "content/net20/SDL2-CS/SDL2_image.cs",
+        "content/net20/SDL2-CS/SDL2_mixer.cs",
+        "content/net20/SDL2-CS/SDL2_ttf.cs",
+        "sdl2-cs.2.0.0.nupkg.sha512",
+        "sdl2-cs.nuspec"
+      ]
+    },
+    "SdlSharp/0.12.64-alpha": {
+      "sha512": "lqMKMxQE0IYxRE/jM5aAL9htCvYQax91eRnzLPmeJk+BC4sL2XJSrrGhl28ceZe92ZFI7P9L83vmJQM9QhLZVQ==",
+      "type": "package",
+      "path": "sdlsharp/0.12.64-alpha",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net7.0/SdlSharp.dll",
+        "lib/net7.0/SdlSharp.xml",
+        "sdlsharp.0.12.64-alpha.nupkg.sha512",
+        "sdlsharp.nuspec"
+      ]
+    },
+    "SdlSharp.Redist/0.11.8-alpha": {
+      "sha512": "2TsrIoNwQFMwPWoi0LHxqQcVdCe05TsuPqrcRISJYbZoMUXaLl8eSJ6d3qPqM6RnMT5fOAPHfXNfPtX4GOM/Vw==",
+      "type": "package",
+      "path": "sdlsharp.redist/0.11.8-alpha",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "build/SdlSharp.Redist.targets",
+        "build/x64/LICENSE.freetype.txt",
+        "build/x64/LICENSE.harfbuzz.txt",
+        "build/x64/LICENSE.zlib.txt",
+        "build/x64/README-SDL.txt",
+        "build/x64/SDL2.dll",
+        "build/x64/SDL2_image.dll",
+        "build/x64/SDL2_mixer.dll",
+        "build/x64/SDL2_ttf.dll",
+        "build/x86/LICENSE.freetype.txt",
+        "build/x86/LICENSE.harfbuzz.txt",
+        "build/x86/LICENSE.zlib.txt",
+        "build/x86/README-SDL.txt",
+        "build/x86/SDL2.dll",
+        "build/x86/SDL2_image.dll",
+        "build/x86/SDL2_mixer.dll",
+        "build/x86/SDL2_ttf.dll",
+        "sdlsharp.redist.0.11.8-alpha.nupkg.sha512",
+        "sdlsharp.redist.nuspec"
+      ]
+    }
+  },
   "projectFileDependencyGroups": {
-    "net9.0": []
+    "net9.0": [
+      "SDL2-CS >= 2.0.0",
+      "SdlSharp >= 0.12.64-alpha"
+    ]
   },
   "packageFolders": {
     "C:\\Users\\ACER\\.nuget\\packages\\": {}
@@ -51,6 +139,16 @@
     "frameworks": {
       "net9.0": {
         "targetAlias": "net9.0",
+        "dependencies": {
+          "SDL2-CS": {
+            "target": "Package",
+            "version": "[2.0.0, )"
+          },
+          "SdlSharp": {
+            "target": "Package",
+            "version": "[0.12.64-alpha, )"
+          }
+        },
         "imports": [
           "net461",
           "net462",

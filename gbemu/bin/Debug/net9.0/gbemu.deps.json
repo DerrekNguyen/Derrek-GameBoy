@@ -9,21 +9,25 @@
       "gbemu/1.0.0": {
         "dependencies": {
           "SDL2-CS": "2.0.0",
-          "SdlDotNet": "1.1.0",
-          "sdl2": "2.0.5"
+          "SdlSharp": "0.12.64-alpha"
         },
         "runtime": {
           "gbemu.dll": {}
         }
       },
-      "sdl2/2.0.5": {
+      "SDL2-CS/2.0.0": {},
+      "SdlSharp/0.12.64-alpha": {
         "dependencies": {
-          "sdl2.redist": "2.0.5"
+          "SdlSharp.Redist": "0.11.8-alpha"
+        },
+        "runtime": {
+          "lib/net7.0/SdlSharp.dll": {
+            "assemblyVersion": "0.12.0.0",
+            "fileVersion": "0.12.64.45782"
+          }
         }
       },
-      "SDL2-CS/2.0.0": {},
-      "sdl2.redist/2.0.5": {},
-      "SdlDotNet/1.1.0": {}
+      "SdlSharp.Redist/0.11.8-alpha": {}
     }
   },
   "libraries": {
@@ -32,13 +36,6 @@
       "serviceable": false,
       "sha512": ""
     },
-    "sdl2/2.0.5": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-HIpYBIe9qlG/U8hGRSiGW7YQARg9U78+pRKFikW9dCUvfZ1hFNpZwL4qeOUwcecwYk7i5sSlnwEiczcOysZDsA==",
-      "path": "sdl2/2.0.5",
-      "hashPath": "sdl2.2.0.5.nupkg.sha512"
-    },
     "SDL2-CS/2.0.0": {
       "type": "package",
       "serviceable": true,
@@ -46,19 +43,19 @@
       "path": "sdl2-cs/2.0.0",
       "hashPath": "sdl2-cs.2.0.0.nupkg.sha512"
     },
-    "sdl2.redist/2.0.5": {
+    "SdlSharp/0.12.64-alpha": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-eyTy0TvzTdkw9ZHrHR1TmaKb2uIbeKH33xhWctyteN5tjyOWUhiASkRuWfv4MLsynFXHMZtSIFtwTNlJGZYW3g==",
-      "path": "sdl2.redist/2.0.5",
-      "hashPath": "sdl2.redist.2.0.5.nupkg.sha512"
+      "sha512": "sha512-lqMKMxQE0IYxRE/jM5aAL9htCvYQax91eRnzLPmeJk+BC4sL2XJSrrGhl28ceZe92ZFI7P9L83vmJQM9QhLZVQ==",
+      "path": "sdlsharp/0.12.64-alpha",
+      "hashPath": "sdlsharp.0.12.64-alpha.nupkg.sha512"
     },
-    "SdlDotNet/1.1.0": {
+    "SdlSharp.Redist/0.11.8-alpha": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-ECFGGKO0HpF4xn97Otiw/uskX1YkgoZkymEeOZWzuPH8fKGkrtV1fpX/pGAkvcp9BXC/Gj6rsSepKKhi5hkFPg==",
-      "path": "sdldotnet/1.1.0",
-      "hashPath": "sdldotnet.1.1.0.nupkg.sha512"
+      "sha512": "sha512-2TsrIoNwQFMwPWoi0LHxqQcVdCe05TsuPqrcRISJYbZoMUXaLl8eSJ6d3qPqM6RnMT5fOAPHfXNfPtX4GOM/Vw==",
+      "path": "sdlsharp.redist/0.11.8-alpha",
+      "hashPath": "sdlsharp.redist.0.11.8-alpha.nupkg.sha512"
     }
   }
 }

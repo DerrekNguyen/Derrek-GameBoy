@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using System.Threading;
-using SDL2;
 
 public class EmuContext
 {
@@ -21,7 +21,6 @@ public class EmuContext
   |Timer|
 
 */
-
 public static class Emulator
 {
     private static readonly EmuContext _context = new();
@@ -44,6 +43,11 @@ public static class Emulator
         // }
 
         Console.WriteLine("Cart loaded...\n");
+        
+        
+        Console.WriteLine("SDL INIT");
+
+        Console.WriteLine("TTF INIT");
 
         Console.WriteLine(argv[0]);
         return 1;

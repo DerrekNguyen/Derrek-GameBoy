@@ -6,7 +6,5 @@ class Program
     {
         String[] args = ["test"];
         Emulator.Run(args);
-        Emulator.Delay(1000);
-        Emulator.Run(args);
     }
 }
