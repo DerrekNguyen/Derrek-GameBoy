@@ -2,9 +2,9 @@
 
 class Program
 {
-    static void Main()
-    {
-        String[] args = ["test"];
-        Emulator.Run(args);
-    }
+   static void Main()
+   {
+      String[] args = ["test"];
+      Emulator.Run(args);
+   }
 }
