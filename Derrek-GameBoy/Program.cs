@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EmuTests;
+using System;
 
 class Program
 {
