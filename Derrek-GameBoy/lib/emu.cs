@@ -37,6 +37,12 @@ public static class Emulator
       {
          Console.WriteLine("Usage: emu <rom_file>\n");
       }
+         
+      if (!Cart.CartLoad(argv[0]))
+      {
+         Console.WriteLine($"Failed to load ROM file: {argv[0]}");
+         return -2;
+      }
 
       Console.WriteLine("Cart loaded...\n");
 
@@ -49,8 +55,8 @@ public static class Emulator
       _context.Paused = false;
       _context.Running = true;
       _context.Ticks = 0;
-      
-      // cpu_init()
+
+      CPU.CPU_Init();
 
       while (_context.Running)
       {
@@ -60,11 +66,12 @@ public static class Emulator
             continue;
          }
 
-        /*
-        if (!cpu_step()) {
-        printf("CPU Stopped\n");
-        return -3;
-        }*/
+
+         if (!CPU.CPU_Step())
+         {
+            Console.WriteLine("CPU Stopped");
+            return -3;
+         }
 
          _context.Ticks++;
       }

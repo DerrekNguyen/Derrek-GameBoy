@@ -85,19 +85,33 @@ public static class Cart
    /// <returns>true/false depending on the success of the process.</returns>
    public static bool CartLoad(string cart)
    {
-      // Check if Header exists
-      if (_cartContext.Header is not RomHeader header)
-      {
-         return false;
-      }
+      //// Load ROM data
+      //_cartContext.Filename = cart;
+      //_cartContext.RomData = File.ReadAllBytes(cart);
+      //_cartContext.RomSize = (uint)_cartContext.RomData.Length;
 
-      // Read cart file
-      if (!File.Exists(cart))
-      {
-         Console.WriteLine($"Failed to open: {cart}");
-         return false;
-      }
-      Console.WriteLine($"Opened: {_cartContext.Filename}");
+      //byte[] titleBytes = new byte[16];
+
+      //unsafe
+      //{
+      //   fixed (byte* ptr = _cartContext.RomData)
+      //   {
+      //      _cartContext.Header = Marshal.PtrToStructure<RomHeader>((IntPtr)(ptr + 0x100));
+      //   }
+
+      //   // Copy title manually from ROM data
+      //   Buffer.BlockCopy(_cartContext.RomData, 0x134, titleBytes, 0, 16);
+
+      //   // Update fixed Title field in struct
+      //   if (_cartContext.Header is RomHeader _header)
+      //   {
+      //      for (int i = 0; i < 16; i++)
+      //      {
+      //         _header.Title[i] = titleBytes[i];
+      //      }
+      //      _cartContext.Header = _header;
+      //   }
+      //}
 
       // Load cart info
       _cartContext.Filename = cart;
@@ -115,13 +129,31 @@ public static class Cart
 
          Buffer.BlockCopy(_cartContext.RomData, 0x134, titleBytes, 0, 16);
 
-         for (int i = 0; i < 16; i++)
+         if (_cartContext.Header is RomHeader _header)
          {
-            header.Title[i] = (byte)(titleBytes[i]);
-         }
+            for (int i = 0; i < 16; i++)
+            {
+               _header.Title[i] = (byte)(titleBytes[i]);
+            }
 
-         _cartContext.Header = header;
+            _cartContext.Header = _header;
+         }
+         else return false;
       }
+
+      // Check if Header exists
+      if (_cartContext.Header is not RomHeader header)
+      {
+         return false;
+      }
+
+      // Read cart file
+      if (!File.Exists(cart))
+      {
+         Console.WriteLine($"Failed to open: {cart}");
+         return false;
+      }
+      Console.WriteLine($"Opened: {_cartContext.Filename}");
 
       // Debug Logs
       Console.WriteLine("Cartridge Loaded:");
