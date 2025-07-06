@@ -175,4 +175,17 @@ public static class Cart
 
       return true;
    }
+
+   public static byte CartRead(UInt16 address)
+   {
+      //for now just ROM ONLY type supported...
+
+      return _cartContext.RomData[address];
+   }
+   public static void CartWrite(UInt16 address, byte value) 
+   {
+      //for now, ROM ONLY...
+
+      Common.NO_IMPL();
+   }
 }
