@@ -85,34 +85,6 @@ public static class Cart
    /// <returns>true/false depending on the success of the process.</returns>
    public static bool CartLoad(string cart)
    {
-      //// Load ROM data
-      //_cartContext.Filename = cart;
-      //_cartContext.RomData = File.ReadAllBytes(cart);
-      //_cartContext.RomSize = (uint)_cartContext.RomData.Length;
-
-      //byte[] titleBytes = new byte[16];
-
-      //unsafe
-      //{
-      //   fixed (byte* ptr = _cartContext.RomData)
-      //   {
-      //      _cartContext.Header = Marshal.PtrToStructure<RomHeader>((IntPtr)(ptr + 0x100));
-      //   }
-
-      //   // Copy title manually from ROM data
-      //   Buffer.BlockCopy(_cartContext.RomData, 0x134, titleBytes, 0, 16);
-
-      //   // Update fixed Title field in struct
-      //   if (_cartContext.Header is RomHeader _header)
-      //   {
-      //      for (int i = 0; i < 16; i++)
-      //      {
-      //         _header.Title[i] = titleBytes[i];
-      //      }
-      //      _cartContext.Header = _header;
-      //   }
-      //}
-
       // Load cart info
       _cartContext.Filename = cart;
       _cartContext.RomData = File.ReadAllBytes(cart);
