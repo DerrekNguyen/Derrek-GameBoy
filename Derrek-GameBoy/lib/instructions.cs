@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 public enum AddrMode
 {
+   AM_NONE,
    AM_IMP,
    AM_R_D16,
    AM_R_R,
@@ -25,7 +26,7 @@ public enum AddrMode
    AM_MR_D8,
    AM_MR,
    AM_A16_R,
-   AM_R_A16
+   AM_R_A16,
 }
 
 public enum RegType
@@ -44,7 +45,7 @@ public enum RegType
    RT_DE,
    RT_HL,
    RT_SP,
-   RT_PC
+   RT_PC,
 }
 
 public enum InType
@@ -98,7 +99,7 @@ public enum InType
    IN_SRL,
    IN_BIT,
    IN_RES,
-   IN_SET
+   IN_SET,
 }
 
 public struct CPU_Registers
@@ -120,7 +121,7 @@ public enum CondType
    CT_NONE, CT_NZ, CT_Z, CT_NC, CT_C
 }
 
-public struct Instruction
+public class Instruction
 {
    public InType type;
    public AddrMode mode;
@@ -128,14 +129,38 @@ public struct Instruction
    public RegType reg2;
    public CondType cond;
    public byte param;
+
+   public Instruction(InType inType = InType.IN_NONE, AddrMode addrMode = AddrMode.AM_NONE, RegType regType = RegType.RT_NONE)
+   {
+      type = inType;
+      mode = addrMode;
+      reg1 = regType;
+   }
 }
 
-public class Instructions
+public static class Instructions
 {
-   public Instruction[] _instructions = new Instruction[0x100];
+   public static Instruction[] _instructions = new Instruction[0x100];
 
-   public Instructions()
+   static Instructions()
    {
-      // TODO: Write a bunch of instructions.
+      _instructions[0x00] = new Instruction(InType.IN_NOP, AddrMode.AM_IMP);
+      _instructions[0x05] = new Instruction(InType.IN_DEC, AddrMode.AM_R, RegType.RT_B);
+      _instructions[0x0E] = new Instruction(InType.IN_LD, AddrMode.AM_R_D8, RegType.RT_C);
+      _instructions[0xAF] = new Instruction(InType.IN_XOR, AddrMode.AM_R, RegType.RT_A);
+      _instructions[0xC3] = new Instruction(InType.IN_JP, AddrMode.AM_D16);
+      _instructions[0xF3] = new Instruction(InType.IN_DI);
+   }
+
+   public static Instruction Instruction_By_Opcode(byte opcode)
+   {
+      if (_instructions[opcode] == null)
+      {
+         return new Instruction();
+      }
+
+      // no need for pointer since returning a class in C# returns by reference.
+      // only need it for structs
+      return _instructions[opcode]; 
    }
 }

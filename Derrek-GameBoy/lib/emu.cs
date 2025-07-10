@@ -78,4 +78,13 @@ public static class Emulator
 
       return 1;
    }
+
+   /// <summary>
+   /// Pass an amount of CPU cycles to synchronize the PPU.
+   /// </summary>
+   /// <param name="emu_cycles">number of CPU cycles</param>
+   public static void EmuCycle(int emu_cycles) 
+   {
+      //TODO: you know what to do
+   }
 }
