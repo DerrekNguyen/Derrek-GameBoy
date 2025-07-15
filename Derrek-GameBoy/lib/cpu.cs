@@ -6,7 +6,7 @@ public unsafe class CPUContext
    public CPU_Registers regs;
 
    // Current fetch...
-   public UInt16 fetchData;
+   public UInt16 fetchedData;
    public UInt16 memDest;
    public byte curOpcode;
 
@@ -20,6 +20,11 @@ public unsafe class CPUContext
 public static class CPU
 {
    public static CPUContext _context = new();
+
+   public static bool CPU_FLAG_Z = Common.BIT(_context.regs.f, 7);
+
+   public static bool CPU_FLAG_C = Common.BIT(_context.regs.f, 4);
+
    public static void CPU_Init()
    {
       _context.regs.pc = 0x100;
@@ -29,13 +34,6 @@ public static class CPU
    {
       _context.curOpcode = Bus.BusRead(_context.regs.pc++);
       _context.CurrInst = Instructions.Instruction_By_Opcode(_context.curOpcode);
-
-      if (_context.CurrInst == null)
-      {
-         Console.WriteLine($"Unknown Instruction: {_context.curOpcode:X2}");
-         Environment.Exit(-7);
-         return;
-      }
    }
 
    public static void Fetch_Data()
@@ -43,17 +41,22 @@ public static class CPU
       _context.memDest = 0;
       _context.destIsMem = false;
 
+      if (_context.CurrInst == null)
+      {
+         return;
+      }
+
       switch (_context.CurrInst.mode)
       {
          case AddrMode.AM_IMP:
             return;
 
          case AddrMode.AM_R:
-            _context.fetchData = CPUUtil.CPUReadReg(_context.CurrInst.reg1);
+            _context.fetchedData = CPUUtil.CPUReadReg(_context.CurrInst.reg1);
             return;
 
          case AddrMode.AM_R_D8:
-            _context.fetchData = Bus.BusRead(_context.regs.pc);
+            _context.fetchedData = Bus.BusRead(_context.regs.pc);
             Emulator.EmuCycle(1);
             _context.regs.pc++;
             return;
@@ -66,7 +69,7 @@ public static class CPU
                UInt16 hi = Bus.BusRead((UInt16)(_context.regs.pc + 1));
                Emulator.EmuCycle(1);
 
-               _context.fetchData = (UInt16)(lo | (hi << 8));
+               _context.fetchedData = (UInt16)(lo | (hi << 8));
 
                _context.regs.pc += 2;
                return;
@@ -81,16 +84,34 @@ public static class CPU
 
    public static void Execute()
    {
-      Console.WriteLine($"Executing Instruction: {_context.curOpcode:X2}, PC: {_context.regs.pc:X4}");
-      Console.WriteLine("Not Executing yet");
+      IN_PROC proc = CPUProc.InstGetProcessor(_context.CurrInst.type);
+
+      if ( proc == null )
+      {
+         Common.NO_IMPL();
+      }
+
+      proc(_context);
    }
 
    public static bool CPU_Step()
    {
       if (!_context.halted)
       {
+         UInt16 pc = _context.regs.pc;
+
          Fetch_Instruction();
          Fetch_Data();
+
+         Console.WriteLine($"Executing Instruction: {_context.curOpcode:X2}, PC: {pc:X4}");
+
+         if (_context.CurrInst == null)
+         {
+            Console.WriteLine($"Unknown Instruction: {_context.curOpcode:X2}");
+            Environment.Exit(-7);
+            return false;
+         }
+
          Execute();
       }
 
