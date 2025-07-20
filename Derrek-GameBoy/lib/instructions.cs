@@ -121,6 +121,73 @@ public enum CondType
    CT_NONE, CT_NZ, CT_Z, CT_NC, CT_C
 }
 
+public static class InstLookUp
+{
+   public static readonly string[] table = new string[]
+   {
+      "<NONE>",
+      "NOP",
+      "LD",
+      "INC",
+      "DEC",
+      "RLCA",
+      "ADD",
+      "RRCA",
+      "STOP",
+      "RLA",
+      "JR",
+      "RRA",
+      "DAA",
+      "CPL",
+      "SCF",
+      "CCF",
+      "HALT",
+      "ADC",
+      "SUB",
+      "SBC",
+      "AND",
+      "XOR",
+      "OR",
+      "CP",
+      "POP",
+      "JP",
+      "PUSH",
+      "RET",
+      "CB",
+      "CALL",
+      "RETI",
+      "LDH",
+      "JPHL",
+      "DI",
+      "EI",
+      "RST",
+      "IN_ERR",
+      "IN_RLC",
+      "IN_RRC",
+      "IN_RL",
+      "IN_RR",
+      "IN_SLA",
+      "IN_SRA",
+      "IN_SWAP",
+      "IN_SRL",
+      "IN_BIT",
+      "IN_RES",
+      "IN_SET"
+   };
+
+   public static string InstName(InType t)
+   {
+      int index = (int)t;
+
+      if (index < 0 || index > table.Length)
+      {
+         return "<INVALID>";
+      }
+
+      return table[index];
+   }
+}
+
 public class Instruction
 {
    public InType type;
@@ -161,6 +228,6 @@ public static class Instructions
 
       // no need for pointer since returning a class in C# returns by reference.
       // only need it for structs
-      return _instructions[opcode]; 
+      return _instructions[opcode];
    }
 }
