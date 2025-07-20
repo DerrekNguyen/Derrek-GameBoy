@@ -10,7 +10,7 @@ class Program
    }
    static void Main()
    {
-      String[] args = [GetRomPath("dmg-acid2.gb")];
+      String[] args = [GetRomPath("tetris.gb")];
       Emulator.Run(args);
    }
 }

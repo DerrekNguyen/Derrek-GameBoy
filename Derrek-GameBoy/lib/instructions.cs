@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 public enum AddrMode
 {
-   AM_NONE,
    AM_IMP,
    AM_R_D16,
    AM_R_R,
@@ -197,7 +196,7 @@ public class Instruction
    public CondType cond;
    public byte param;
 
-   public Instruction(InType inType = InType.IN_NONE, AddrMode addrMode = AddrMode.AM_NONE, RegType regType = RegType.RT_NONE)
+   public Instruction(InType inType = InType.IN_NONE, AddrMode addrMode = AddrMode.AM_IMP, RegType regType = RegType.RT_NONE)
    {
       type = inType;
       mode = addrMode;
@@ -221,13 +220,12 @@ public static class Instructions
 
    public static Instruction Instruction_By_Opcode(byte opcode)
    {
-      if (_instructions[opcode] == null)
-      {
-         return new Instruction();
-      }
-
       // no need for pointer since returning a class in C# returns by reference.
       // only need it for structs
-      return _instructions[opcode];
+      if (_instructions[opcode] is not null)
+      {
+         return _instructions[opcode];
+      }
+      return new Instruction();
    }
 }

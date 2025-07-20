@@ -30,6 +30,8 @@ public static class CPUProc
          InType.IN_NOP => ProcNoop,
          InType.IN_LD => ProcLD,
          InType.IN_JP => ProcJP,
+         InType.IN_DI => ProcDI,
+         InType.IN_XOR => ProcXOR,
          _ => ProcNone
       };
    }
@@ -57,7 +59,44 @@ public static class CPUProc
          Emulator.EmuCycle(1);
       }
    }
-   
+
+   /// <summary>
+   /// Helper function for ProcXOR. Set the bits of the flag register in 'ctx' according to flags z, n, h, c
+   /// </summary>
+   private static void CPUSetFlags(CPUContext ctx, bool? z, bool? n, bool? h, bool? c)
+   {
+      if (z.HasValue)
+      {
+         Common.BIT_SET(ctx.regs.f, 7, z.Value);
+      }
+
+      if (n.HasValue)
+      {
+         Common.BIT_SET(ctx.regs.f, 6, n.Value);
+      }
+
+      if (h.HasValue)
+      {
+         Common.BIT_SET(ctx.regs.f, 5, h.Value);
+      }
+
+      if (c.HasValue)
+      {
+         Common.BIT_SET(ctx.regs.f, 4, c.Value);
+      }
+   }
+
+   public static void ProcXOR(CPUContext ctx)
+   {
+      ctx.regs.a ^= (byte)ctx.fetchedData;
+      CPUSetFlags(ctx, ctx.regs.a == 0, false, false, false);
+   }
+
+   public static void ProcDI(CPUContext ctx)
+   {
+      ctx.intMasterEnabled = false;
+   }
+
    public static IN_PROC InstGetProcessor(InType type)
    {
       return GetProc(type);

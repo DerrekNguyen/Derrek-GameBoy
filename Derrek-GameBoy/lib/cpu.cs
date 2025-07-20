@@ -15,6 +15,8 @@ public unsafe class CPUContext
    public bool destIsMem;
    public bool halted;
    public bool stepping;
+
+   public bool intMasterEnabled;
 }
 
 public static class CPU
@@ -28,6 +30,7 @@ public static class CPU
    public static void CPU_Init()
    {
       _context.regs.pc = 0x100;
+      _context.regs.a = 0x01;
    }
 
    public static void Fetch_Instruction()
@@ -76,7 +79,7 @@ public static class CPU
             }
 
          default:
-            Console.WriteLine($"Unknown Address mode: {_context.CurrInst.mode}");
+            Console.WriteLine($"Unknown Address mode: {_context.CurrInst.mode} ({_context.curOpcode:X2})");
             Environment.Exit(-7);
             return;
       }
@@ -103,7 +106,9 @@ public static class CPU
          Fetch_Instruction();
          Fetch_Data();
 
-         Console.WriteLine($"Executing Instruction: {_context.curOpcode:X2}, PC: {pc:X4}");
+         Console.WriteLine($"{pc:X4}: {InstLookUp.InstName(_context.CurrInst.type), 7} " +
+            $"({_context.curOpcode:X2} {Bus.BusRead((ushort)(pc + 1)):X2} {Bus.BusRead((ushort)(pc + 2)):X2}) " +
+            $"A: {_context.regs.a:X2} B: {_context.regs.b:X2} C: {_context.regs.c:X2}");
 
          if (_context.CurrInst == null)
          {
