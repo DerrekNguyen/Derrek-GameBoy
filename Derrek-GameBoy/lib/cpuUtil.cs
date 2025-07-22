@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,6 +35,31 @@ public static class CPUUtil
 
          default:
             return (UInt16)0;
+      }
+   }
+
+   public static void CPUSetReg(RegType rt, UInt16 value)
+   {
+      switch (rt)
+      {
+         case RegType.RT_A: CPU._context.regs.a = (byte)(value & 0xFF); break;
+         case RegType.RT_F: CPU._context.regs.f = (byte)(value & 0xFF); break;
+         case RegType.RT_B: CPU._context.regs.b = (byte)(value & 0xFF); break;
+         case RegType.RT_C: CPU._context.regs.c = (byte)(value & 0xFF); break;
+         case RegType.RT_D: CPU._context.regs.d = (byte)(value & 0xFF); break;  
+         case RegType.RT_E: CPU._context.regs.e = (byte)(value & 0xFF); break;
+         case RegType.RT_H: CPU._context.regs.h = (byte)(value & 0xFF); break;
+         case RegType.RT_L: CPU._context.regs.l = (byte)(value & 0xFF); break;
+
+         case RegType.RT_AF: CPU._context.regs.a = (byte)Reverse(value); break;
+         case RegType.RT_BC: CPU._context.regs.b = (byte)Reverse(value); break;
+         case RegType.RT_DE: CPU._context.regs.d = (byte)Reverse(value); break;
+         case RegType.RT_HL: CPU._context.regs.h = (byte)Reverse(value); break;
+
+         case RegType.RT_PC: CPU._context.regs.pc = (byte)value; break;
+         case RegType.RT_SP: CPU._context.regs.sp = (byte)value; break;
+
+         default: break;
       }
    }
 }

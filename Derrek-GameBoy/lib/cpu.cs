@@ -38,53 +38,6 @@ public static class CPU
       _context.curOpcode = Bus.BusRead(_context.regs.pc++);
       _context.CurrInst = Instructions.Instruction_By_Opcode(_context.curOpcode);
    }
-
-   public static void Fetch_Data()
-   {
-      _context.memDest = 0;
-      _context.destIsMem = false;
-
-      if (_context.CurrInst == null)
-      {
-         return;
-      }
-
-      switch (_context.CurrInst.mode)
-      {
-         case AddrMode.AM_IMP:
-            return;
-
-         case AddrMode.AM_R:
-            _context.fetchedData = CPUUtil.CPUReadReg(_context.CurrInst.reg1);
-            return;
-
-         case AddrMode.AM_R_D8:
-            _context.fetchedData = Bus.BusRead(_context.regs.pc);
-            Emulator.EmuCycle(1);
-            _context.regs.pc++;
-            return;
-
-         case AddrMode.AM_D16:
-            {
-               UInt16 lo = Bus.BusRead(_context.regs.pc);
-               Emulator.EmuCycle(1);
-
-               UInt16 hi = Bus.BusRead((UInt16)(_context.regs.pc + 1));
-               Emulator.EmuCycle(1);
-
-               _context.fetchedData = (UInt16)(lo | (hi << 8));
-
-               _context.regs.pc += 2;
-               return;
-            }
-
-         default:
-            Console.WriteLine($"Unknown Address mode: {_context.CurrInst.mode} ({_context.curOpcode:X2})");
-            Environment.Exit(-7);
-            return;
-      }
-   }
-
    public static void Execute()
    {
       IN_PROC proc = CPUProc.InstGetProcessor(_context.CurrInst.type);
@@ -104,7 +57,7 @@ public static class CPU
          UInt16 pc = _context.regs.pc;
 
          Fetch_Instruction();
-         Fetch_Data();
+         CPUFetch.Fetch_Data(_context);
 
          Console.WriteLine($"{pc:X4}: {InstLookUp.InstName(_context.CurrInst.type), 7} " +
             $"({_context.curOpcode:X2} {Bus.BusRead((ushort)(pc + 1)):X2} {Bus.BusRead((ushort)(pc + 2)):X2}) " +

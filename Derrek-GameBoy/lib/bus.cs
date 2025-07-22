@@ -35,4 +35,18 @@ public static class Bus
 
       Common.NO_IMPL();
    }
+
+   public static UInt16 BusRead16(UInt16 address) 
+   {
+      UInt16 lo = Bus.BusRead(address);
+      UInt16 hi = Bus.BusRead((UInt16)(address + 1));
+
+      return (UInt16)(lo | (hi << 8));
+   }
+
+   public static void BusWrite16(UInt16 address, UInt16 value)
+   {
+      BusWrite((UInt16)(address + 1), (byte)((value >> 8) & 0xFF));
+      BusWrite(address, (byte)(value & 0xFF));
+   }
 }

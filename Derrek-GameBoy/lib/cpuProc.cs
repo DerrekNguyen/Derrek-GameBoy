@@ -46,9 +46,38 @@ public static class CPUProc
 
    }
 
+   /// <summary>
+   /// Process Load (LD) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
    public static void ProcLD(CPUContext ctx)
    {
+      // Special cases (loading into memory)
+      if (ctx.destIsMem)
+      {
+         // If 16-bit register
+         if (ctx.CurrInst.reg2 >= RegType.RT_AF)
+         {
+            Bus.BusWrite16(ctx.memDest, ctx.fetchedData);
+            Emulator.EmuCycle(1);
+         } else
+         {
+            Bus.BusWrite(ctx.memDest, (byte)ctx.fetchedData);
+         }
+      }
 
+      if (ctx.CurrInst.mode == AddrMode.AM_HL_SPR)
+      {
+         bool hflag = ((CPUUtil.CPUReadReg(ctx.CurrInst.reg2) & 0xF) + (ctx.fetchedData & 0xF)) >= 0x10;
+         bool cflag = ((CPUUtil.CPUReadReg(ctx.CurrInst.reg2) & 0xFF) + (ctx.fetchedData & 0xFF)) >= 0x100;
+         CPUSetFlags(ctx, false, false, hflag, cflag);
+
+         CPUUtil.CPUSetReg(ctx.CurrInst.reg1, (ushort)(CPUUtil.CPUReadReg(ctx.CurrInst.reg2) + ctx.fetchedData));
+
+      }
+
+      // Load the fetched data into register
+      CPUUtil.CPUSetReg(ctx.CurrInst.reg1, ctx.fetchedData);
    }
 
    public static void ProcJP(CPUContext ctx)
@@ -86,6 +115,10 @@ public static class CPUProc
       }
    }
 
+   /// <summary>
+   /// 
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
    public static void ProcXOR(CPUContext ctx)
    {
       ctx.regs.a ^= (byte)ctx.fetchedData;

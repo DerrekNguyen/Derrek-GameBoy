@@ -210,7 +210,7 @@ public static class Instructions
 
    static Instructions()
    {
-      _instructions[0x00] = new Instruction(InType.IN_NOP, AddrMode.AM_IMP);
+      _instructions[0x00] = new Instruction(InType.IN_NOP);
       _instructions[0x05] = new Instruction(InType.IN_DEC, AddrMode.AM_R, RegType.RT_B);
       _instructions[0x0E] = new Instruction(InType.IN_LD, AddrMode.AM_R_D8, RegType.RT_C);
       _instructions[0xAF] = new Instruction(InType.IN_XOR, AddrMode.AM_R, RegType.RT_A);
