@@ -19,10 +19,53 @@ public static class Bus
    {
       if (address < 0x8000)
       {
+         // Rom data
+         return Cart.CartRead(address);
+      } 
+      else if (address < 0xA000)
+      {
+         // Char/map data
+         // TODO
+         Common.NO_IMPL();
+      }
+      else if (address < 0xC000)
+      {
+         // Cartridge RAM
          return Cart.CartRead(address);
       }
-
-      Common.NO_IMPL();
+      else if (address < 0xE000)
+      {
+         // WRAM (Working RAM)
+         return RAM.WRamRead(address);
+      }
+      else if (address < 0xFE00)
+      {
+         // Reserved Echo RAM
+         return 0;
+      }
+      else if (address < 0xFEA0)
+      {
+         // 0AM
+         // TODO
+         Common.NO_IMPL();
+      }
+      else if (address < 0xFF00)
+      {
+         // Reserved Unusable
+         return 0;
+      }
+      else if (address < 0xFF80)
+      {
+         // I/O registers
+         // TODO
+         Common.NO_IMPL();
+      }
+      else if (address == 0xFFFF)
+      {
+         // CPU Enable register
+         // TODO
+         Common.NO_IMPL();
+      }
       return 0;
    }
 
@@ -30,10 +73,62 @@ public static class Bus
    {
       if (address < 0x8000)
       {
+         // ROM data
          Cart.CartWrite(address, value);
       }
-
-      Common.NO_IMPL();
+      else if (address < 0xA000)
+      {
+         // Char/map data
+         // TODO
+         Common.NO_IMPL();
+      }
+      else if (address < 0xC000)
+      {
+         // Char/map data
+         // TODO
+         Common.NO_IMPL();
+      }
+      else if (address < 0xC000)
+      {
+         // Cartridge RAM
+         Cart.CartWrite(address, value);
+      }
+      else if (address < 0xE000)
+      {
+         // WRAM
+         RAM.WRamWrite(address, value);
+      }
+      else if (address < 0xFE00)
+      {
+         // Reserved echo RAM
+      }
+      else if (address < 0xFEA0)
+      {
+         // OAM
+         //TODO
+         Common.NO_IMPL();
+      }
+      else if (address < 0xFF00)
+      {
+         // Unsuable reserved
+      }
+      else if (address < 0xFE80)
+      {
+         // I/O Registers
+         // TODO
+         Common.NO_IMPL();
+      }
+      else if (address == 0xFFFF)
+      {
+         // CPU SET ENABLE REGISTER
+         // TODO
+         Common.NO_IMPL();
+      }
+      else
+      {
+         // HRAM
+         RAM.HRamWrite(address, value);
+      }
    }
 
    public static UInt16 BusRead16(UInt16 address) 

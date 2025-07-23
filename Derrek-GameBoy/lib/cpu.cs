@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using System;
 
-public unsafe class CPUContext
+public class CPUContext
 {
    public CPU_Registers regs;
 
