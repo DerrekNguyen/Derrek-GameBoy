@@ -10,7 +10,7 @@ class Program
    }
    static void Main()
    {
-      String[] args = [GetRomPath("tetris.gb")];
+      String[] args = [GetRomPath("mem_timing.gb")];
       Emulator.Run(args);
    }
 }
