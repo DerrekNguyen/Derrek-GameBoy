@@ -17,6 +17,8 @@ public class CPUContext
    public bool stepping;
 
    public bool intMasterEnabled;
+
+   public byte ieRegister;
 }
 
 public static class CPU
@@ -61,7 +63,8 @@ public static class CPU
 
          Console.WriteLine($"{pc:X4}: {InstLookUp.InstName(_context.CurrInst.type), 7} " +
             $"({_context.curOpcode:X2} {Bus.BusRead((ushort)(pc + 1)):X2} {Bus.BusRead((ushort)(pc + 2)):X2}) " +
-            $"A: {_context.regs.a:X2} B: {_context.regs.b:X2} C: {_context.regs.c:X2}");
+            $"A: {_context.regs.a:X2} BC: {_context.regs.b:X2}{_context.regs.c:X2} " +
+            $"DE: {_context.regs.d:X2}{_context.regs.e:X2} HL: {_context.regs.h:X2}{_context.regs.l:X2}");
 
          if (_context.CurrInst == null)
          {

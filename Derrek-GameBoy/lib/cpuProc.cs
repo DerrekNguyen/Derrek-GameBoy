@@ -29,6 +29,7 @@ public static class CPUProc
          InType.IN_NONE => ProcNone,
          InType.IN_NOP => ProcNoop,
          InType.IN_LD => ProcLD,
+         InType.IN_LDH => ProcLDH,
          InType.IN_JP => ProcJP,
          InType.IN_DI => ProcDI,
          InType.IN_XOR => ProcXOR,
@@ -64,6 +65,10 @@ public static class CPUProc
          {
             Bus.BusWrite(ctx.memDest, (byte)ctx.fetchedData);
          }
+
+         Emulator.EmuCycle(1);
+
+         return;
       }
 
       if (ctx.CurrInst.mode == AddrMode.AM_HL_SPR)
@@ -74,10 +79,25 @@ public static class CPUProc
 
          CPUUtil.CPUSetReg(ctx.CurrInst.reg1, (ushort)(CPUUtil.CPUReadReg(ctx.CurrInst.reg2) + ctx.fetchedData));
 
+         return;
       }
 
       // Load the fetched data into register
       CPUUtil.CPUSetReg(ctx.CurrInst.reg1, ctx.fetchedData);
+   }
+
+   public static void ProcLDH(CPUContext ctx)
+   {
+      if (ctx.CurrInst.reg1 == RegType.RT_A)
+      {
+         CPUUtil.CPUSetReg(ctx.CurrInst.reg1, Bus.BusRead((UInt16)(0xFF00 | ctx.fetchedData)));
+      } 
+      else
+      {
+         Bus.BusWrite((UInt16)(0xFF00 | ctx.fetchedData), (byte)CPUUtil.CPUReadReg(ctx.CurrInst.reg2));
+      }
+
+      Emulator.EmuCycle(1);
    }
 
    public static void ProcJP(CPUContext ctx)

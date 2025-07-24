@@ -25,10 +25,10 @@ public static class CPUUtil
          case RegType.RT_H: return CPU._context.regs.h;
          case RegType.RT_L: return CPU._context.regs.l;
 
-         case RegType.RT_AF: return Reverse(CPU._context.regs.a);
-         case RegType.RT_BC: return Reverse(CPU._context.regs.b);
-         case RegType.RT_DE: return Reverse(CPU._context.regs.d);
-         case RegType.RT_HL: return Reverse(CPU._context.regs.h);
+         case RegType.RT_AF: return (ushort)((CPU._context.regs.a << 8) | CPU._context.regs.f);
+         case RegType.RT_BC: return (ushort)((CPU._context.regs.b << 8) | CPU._context.regs.c);
+         case RegType.RT_DE: return (ushort)((CPU._context.regs.d << 8) | CPU._context.regs.e);
+         case RegType.RT_HL: return (ushort)((CPU._context.regs.h << 8) | CPU._context.regs.l);
 
          case RegType.RT_PC: return CPU._context.regs.pc;
          case RegType.RT_SP: return CPU._context.regs.sp;
@@ -51,10 +51,29 @@ public static class CPUUtil
          case RegType.RT_H: CPU._context.regs.h = (byte)(value & 0xFF); break;
          case RegType.RT_L: CPU._context.regs.l = (byte)(value & 0xFF); break;
 
-         case RegType.RT_AF: CPU._context.regs.a = (byte)Reverse(value); break;
-         case RegType.RT_BC: CPU._context.regs.b = (byte)Reverse(value); break;
-         case RegType.RT_DE: CPU._context.regs.d = (byte)Reverse(value); break;
-         case RegType.RT_HL: CPU._context.regs.h = (byte)Reverse(value); break;
+         case RegType.RT_AF:
+            ushort AF = value;
+            CPU._context.regs.f = (byte)(AF >> 8);
+            CPU._context.regs.e = (byte)(AF & 0xFF);
+            break;
+
+         case RegType.RT_BC:
+            ushort BC = value;
+            CPU._context.regs.c = (byte)(BC >> 8);
+            CPU._context.regs.b = (byte)(BC & 0xFF);
+            break;
+
+         case RegType.RT_DE:
+            ushort DE = value;
+            CPU._context.regs.e = (byte)(DE >> 8);
+            CPU._context.regs.d = (byte)(DE & 0xFF);
+            break;
+
+         case RegType.RT_HL:
+            ushort HL = value;
+            CPU._context.regs.h = (byte)(HL >> 8);
+            CPU._context.regs.l = (byte)(HL & 0xFF);
+            break;
 
          case RegType.RT_PC: CPU._context.regs.pc = (byte)value; break;
          case RegType.RT_SP: CPU._context.regs.sp = (byte)value; break;

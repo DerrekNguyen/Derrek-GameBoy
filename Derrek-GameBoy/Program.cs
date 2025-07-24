@@ -10,7 +10,7 @@ class Program
    }
    static void Main()
    {
-      String[] args = [GetRomPath("mem_timing.gb")];
+      String[] args = [GetRomPath("cpu_instrs.gb")];
       Emulator.Run(args);
    }
 }

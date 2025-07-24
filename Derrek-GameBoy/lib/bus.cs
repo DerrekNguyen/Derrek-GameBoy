@@ -64,7 +64,7 @@ public static class Bus
       {
          // CPU Enable register
          // TODO
-         Common.NO_IMPL();
+         return CPU._context.ieRegister;
       }
       return 0;
    }
@@ -112,17 +112,17 @@ public static class Bus
       {
          // Unsuable reserved
       }
-      else if (address < 0xFE80)
+      else if (address < 0xFF80)
       {
          // I/O Registers
          // TODO
-         Common.NO_IMPL();
+         Console.WriteLine("I/O, not supported yet");
       }
       else if (address == 0xFFFF)
       {
          // CPU SET ENABLE REGISTER
          // TODO
-         Common.NO_IMPL();
+         CPU._context.ieRegister = value;
       }
       else
       {

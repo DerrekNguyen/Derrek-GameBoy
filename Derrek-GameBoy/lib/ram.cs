@@ -38,6 +38,7 @@ public static class RAM
    public static void HRamWrite(UInt16 address, byte value)
    {
       address -= 0xFF80;
+
       _context.hram[address] = value;
    }
 
