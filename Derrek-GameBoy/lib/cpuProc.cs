@@ -33,6 +33,8 @@ public static class CPUProc
          InType.IN_JP => ProcJP,
          InType.IN_DI => ProcDI,
          InType.IN_XOR => ProcXOR,
+         InType.IN_POP => ProcPOP,
+         InType.IN_PUSH => ProcPUSH,
          _ => ProcNone
       };
    }
@@ -86,6 +88,10 @@ public static class CPUProc
       CPUUtil.CPUSetReg(ctx.CurrInst.reg1, ctx.fetchedData);
    }
 
+   /// <summary>
+   /// Process Load High Ram (LDH) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
    public static void ProcLDH(CPUContext ctx)
    {
       if (ctx.CurrInst.reg1 == RegType.RT_A)
@@ -100,13 +106,34 @@ public static class CPUProc
       Emulator.EmuCycle(1);
    }
 
-   public static void ProcJP(CPUContext ctx)
+   /// <summary>
+   /// Generic jump instruction.
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   /// <param name="address">Destination address</param>
+   /// <param name="pushpc">Whether to push pc to stack</param>
+   public static void GotoAddr(CPUContext ctx, UInt16 address, bool pushpc)
    {
-      if (CheckCondition(ctx))
+      if (CheckCondition(ctx)) 
       {
+         if (pushpc)
+         {
+            Stack.Push16(ctx.regs.pc);
+            Emulator.EmuCycle(2); // pass 2 cycles since pushing 16-bit data (2 instances of 8-bit)
+         }
+
          ctx.regs.pc = ctx.fetchedData;
          Emulator.EmuCycle(1);
       }
+   }
+
+   /// <summary>
+   /// Process Jump (JP) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcJP(CPUContext ctx)
+   {
+      GotoAddr(ctx, ctx.fetchedData, false);
    }
 
    /// <summary>
@@ -136,7 +163,7 @@ public static class CPUProc
    }
 
    /// <summary>
-   /// 
+   /// Process XOR instructions
    /// </summary>
    /// <param name="ctx">The instance of CPUContext</param>
    public static void ProcXOR(CPUContext ctx)
@@ -145,11 +172,57 @@ public static class CPUProc
       CPUSetFlags(ctx, ctx.regs.a == 0, false, false, false);
    }
 
+   /// <summary>
+   /// Process Disable Interrupts (DI) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
    public static void ProcDI(CPUContext ctx)
    {
       ctx.intMasterEnabled = false;
    }
 
+   /// <summary>
+   /// Process stack pop (POP) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcPOP(CPUContext ctx)
+   {
+      UInt16 hi = (UInt16)Stack.Pop();
+      Emulator.EmuCycle(1);
+      UInt16 lo = (UInt16)Stack.Pop();
+      Emulator.EmuCycle(1);
+
+      UInt16 n = (ushort)((hi << 8) | lo);
+
+      CPUUtil.CPUSetReg(ctx.CurrInst.reg1, n);
+
+      if (ctx.CurrInst.reg1 == RegType.RT_AF)
+      {
+         CPUUtil.CPUSetReg(ctx.CurrInst.reg1, (UInt16)(n & 0xFFF0));
+      }
+   }
+
+   /// <summary>
+   /// Process stack push (PUSH) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcPUSH(CPUContext ctx)
+   {
+      UInt16 hi = (UInt16)(CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xFF);
+      Emulator.EmuCycle(1);
+      Stack.Push((byte)hi);
+
+      UInt16 lo = (UInt16)(CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xFF);
+      Emulator.EmuCycle(1);
+      Stack.Push((byte)lo);
+
+      Emulator.EmuCycle(1);
+   }
+
+   /// <summary>
+   /// return the function pointer corresponding to the Instruction type
+   /// </summary>
+   /// <param name="type">type of instruction</param>
    public static IN_PROC InstGetProcessor(InType type)
    {
       return GetProc(type);
