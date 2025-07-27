@@ -20,11 +20,14 @@ public static class Common
    /// </summary>
    /// <param name="a">Byte variable</param>
    /// <param name="n">Index of the bit</param>
-   /// <param name="on">Flag</param>
+   /// <param name="on">Signal whether to set (1), or clear (0)</param>
    /// <returns></returns>
-   public static byte BIT_SET(byte a, int n, bool on)
+   public static byte BIT_SET(ref byte a, int n, sbyte on)
    {
-      return on ? (byte)(a | (1 << n)) : (byte)(a & ~(1 << n));
+      if (on != 0)
+         return (byte)(a | (1 << n));
+      else
+         return (byte)(a & ~(1 << n));
    }
 
    /// <summary>

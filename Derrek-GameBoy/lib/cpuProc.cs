@@ -35,6 +35,11 @@ public static class CPUProc
          InType.IN_XOR => ProcXOR,
          InType.IN_POP => ProcPOP,
          InType.IN_PUSH => ProcPUSH,
+         InType.IN_JR => ProcJR,
+         InType.IN_CALL => ProcCALL,
+         InType.IN_RST => ProcRST,
+         InType.IN_RET => ProcRET,
+         InType.IN_RETI => ProcRETI,
          _ => ProcNone
       };
    }
@@ -47,45 +52,6 @@ public static class CPUProc
    public static void ProcNoop(CPUContext ctx)
    {
 
-   }
-
-   /// <summary>
-   /// Process Load (LD) instructions
-   /// </summary>
-   /// <param name="ctx">The instance of CPUContext</param>
-   public static void ProcLD(CPUContext ctx)
-   {
-      // Special cases (loading into memory)
-      if (ctx.destIsMem)
-      {
-         // If 16-bit register
-         if (ctx.CurrInst.reg2 >= RegType.RT_AF)
-         {
-            Bus.BusWrite16(ctx.memDest, ctx.fetchedData);
-            Emulator.EmuCycle(1);
-         } else
-         {
-            Bus.BusWrite(ctx.memDest, (byte)ctx.fetchedData);
-         }
-
-         Emulator.EmuCycle(1);
-
-         return;
-      }
-
-      if (ctx.CurrInst.mode == AddrMode.AM_HL_SPR)
-      {
-         bool hflag = ((CPUUtil.CPUReadReg(ctx.CurrInst.reg2) & 0xF) + (ctx.fetchedData & 0xF)) >= 0x10;
-         bool cflag = ((CPUUtil.CPUReadReg(ctx.CurrInst.reg2) & 0xFF) + (ctx.fetchedData & 0xFF)) >= 0x100;
-         CPUSetFlags(ctx, false, false, hflag, cflag);
-
-         CPUUtil.CPUSetReg(ctx.CurrInst.reg1, (ushort)(CPUUtil.CPUReadReg(ctx.CurrInst.reg2) + ctx.fetchedData));
-
-         return;
-      }
-
-      // Load the fetched data into register
-      CPUUtil.CPUSetReg(ctx.CurrInst.reg1, ctx.fetchedData);
    }
 
    /// <summary>
@@ -118,11 +84,11 @@ public static class CPUProc
       {
          if (pushpc)
          {
-            Stack.Push16(ctx.regs.pc);
             Emulator.EmuCycle(2); // pass 2 cycles since pushing 16-bit data (2 instances of 8-bit)
+            Stack.Push16(ctx.regs.pc);
          }
 
-         ctx.regs.pc = ctx.fetchedData;
+         ctx.regs.pc = address;
          Emulator.EmuCycle(1);
       }
    }
@@ -137,29 +103,133 @@ public static class CPUProc
    }
 
    /// <summary>
+   /// Process Jump relative (JR) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcJR(CPUContext ctx)
+   {
+      sbyte rel = (sbyte)(ctx.fetchedData & 0xFF);
+      UInt16 addr = (UInt16)(ctx.regs.pc + rel);
+      GotoAddr(ctx, addr, false);
+   }
+
+   /// <summary>
+   /// Process CALL instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcCALL(CPUContext ctx)
+   {
+      GotoAddr(ctx, ctx.fetchedData, true);
+   }
+
+   /// <summary>
+   /// Process Restart (RST) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcRST(CPUContext ctx)
+   {
+      GotoAddr(ctx, ctx.CurrInst.param, true);
+   }
+
+   /// <summary>
+   /// Process Return (RET) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcRET(CPUContext ctx)
+   {
+      if (ctx.CurrInst.cond != CondType.CT_NONE)
+      {
+         Emulator.EmuCycle(1);
+      }
+
+      if (CheckCondition(ctx))
+      {
+         byte lo = Stack.Pop();
+         Emulator.EmuCycle(1);
+         byte hi = Stack.Pop();
+         Emulator.EmuCycle(1);
+
+         UInt16 n = (UInt16)(hi << 8 | lo);
+         ctx.regs.pc = n;
+
+         Emulator.EmuCycle(1);
+      }
+   }
+
+   /// <summary>
+   /// Process Returning from interrupt (RETI) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcRETI(CPUContext ctx)
+   {
+      ctx.intMasterEnabled = true;
+      ProcRET(ctx);
+   }
+
+   /// <summary>
    /// Helper function for ProcXOR. Set the bits of the flag register in 'ctx' according to flags z, n, h, c
    /// </summary>
-   private static void CPUSetFlags(CPUContext ctx, bool? z, bool? n, bool? h, bool? c)
+   private static void CPUSetFlags(CPUContext ctx, sbyte z, sbyte n, sbyte h, sbyte c)
    {
-      if (z.HasValue)
+      if (z != -1)
       {
-         Common.BIT_SET(ctx.regs.f, 7, z.Value);
+         Common.BIT_SET(ref ctx.regs.f, 7, z);
       }
 
-      if (n.HasValue)
+      if (n != -1)
       {
-         Common.BIT_SET(ctx.regs.f, 6, n.Value);
+         Common.BIT_SET(ref ctx.regs.f, 6, n);
       }
 
-      if (h.HasValue)
+      if (h != -1)
       {
-         Common.BIT_SET(ctx.regs.f, 5, h.Value);
+         Common.BIT_SET(ref ctx.regs.f, 5, h);
       }
 
-      if (c.HasValue)
+      if (c != -1)
       {
-         Common.BIT_SET(ctx.regs.f, 4, c.Value);
+         Common.BIT_SET(ref ctx.regs.f, 4, c);
       }
+   }
+
+   /// <summary>
+   /// Process Load (LD) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcLD(CPUContext ctx)
+   {
+      // Special cases (loading into memory)
+      if (ctx.destIsMem)
+      {
+         // If 16-bit register
+         if (ctx.CurrInst.reg2 >= RegType.RT_AF)
+         {
+            Bus.BusWrite16(ctx.memDest, ctx.fetchedData);
+            Emulator.EmuCycle(1);
+         }
+         else
+         {
+            Bus.BusWrite(ctx.memDest, (byte)ctx.fetchedData);
+         }
+
+         Emulator.EmuCycle(1);
+
+         return;
+      }
+
+      if (ctx.CurrInst.mode == AddrMode.AM_HL_SPR)
+      {
+         sbyte hflag = (sbyte)(((CPUUtil.CPUReadReg(ctx.CurrInst.reg2) & 0xF) + (ctx.fetchedData & 0xF)) >= 0x10 ? 1 : 0);
+         sbyte cflag = (sbyte)(((CPUUtil.CPUReadReg(ctx.CurrInst.reg2) & 0xFF) + (ctx.fetchedData & 0xFF)) >= 0x100 ? 1 : 0);
+         CPUSetFlags(ctx, 0, 0, hflag, cflag);
+
+         CPUUtil.CPUSetReg(ctx.CurrInst.reg1, (ushort)(CPUUtil.CPUReadReg(ctx.CurrInst.reg2) + (sbyte)ctx.fetchedData));
+
+         return;
+      }
+
+      // Load the fetched data into register
+      CPUUtil.CPUSetReg(ctx.CurrInst.reg1, ctx.fetchedData);
    }
 
    /// <summary>
@@ -169,7 +239,7 @@ public static class CPUProc
    public static void ProcXOR(CPUContext ctx)
    {
       ctx.regs.a ^= (byte)ctx.fetchedData;
-      CPUSetFlags(ctx, ctx.regs.a == 0, false, false, false);
+      CPUSetFlags(ctx, (sbyte)(ctx.regs.a == 0 ? 1 : 0), 0, 0, 0);
    }
 
    /// <summary>

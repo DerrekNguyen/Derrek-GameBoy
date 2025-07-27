@@ -40,6 +40,7 @@ public static class CPU
       _context.curOpcode = Bus.BusRead(_context.regs.pc++);
       _context.CurrInst = Instructions.Instruction_By_Opcode(_context.curOpcode);
    }
+
    public static void Execute()
    {
       IN_PROC proc = CPUProc.InstGetProcessor(_context.CurrInst.type);

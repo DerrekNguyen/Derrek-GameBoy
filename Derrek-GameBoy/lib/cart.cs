@@ -158,6 +158,7 @@ public static class Cart
    {
       //for now, ROM ONLY...
 
-      Common.NO_IMPL();
+      Console.WriteLine($"Cart Write: {address:X4}");
+      //Common.NO_IMPL();
    }
 }

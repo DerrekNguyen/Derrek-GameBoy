@@ -75,8 +75,8 @@ public static class CPUUtil
             CPU._context.regs.l = (byte)(HL & 0xFF);
             break;
 
-         case RegType.RT_PC: CPU._context.regs.pc = (byte)value; break;
-         case RegType.RT_SP: CPU._context.regs.sp = (byte)value; break;
+         case RegType.RT_PC: CPU._context.regs.pc = value; break;
+         case RegType.RT_SP: CPU._context.regs.sp = value; break;
 
          default: break;
       }
