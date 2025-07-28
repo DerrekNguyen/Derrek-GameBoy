@@ -42,6 +42,10 @@ public static class CPUProc
          InType.IN_RETI => ProcRETI,
          InType.IN_INC => ProcINC,
          InType.IN_DEC => ProcDEC,
+         InType.IN_ADD => ProcADD,
+         InType.IN_SUB => ProcSUB,
+         InType.IN_ADC => ProcADC,
+         InType.IN_SBC => ProcSBC,
          _ => ProcNone
       };
    }
@@ -387,12 +391,12 @@ public static class CPUProc
 
       sbyte z = (sbyte)((val & 0xFF) == 0 ? 1 : 0);
       sbyte h = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xF) + (ctx.fetchedData & 0xF) >= 0x10 ? 1 : 0);
-      sbyte c = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xFF) + (ctx.fetchedData & 0xFF) > 0x100 ? 1 : 0);
+      sbyte c = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xFF) + (ctx.fetchedData & 0xFF) >= 0x100 ? 1 : 0);
 
       if (Is16)
       {
          z = -1;
-         h = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xFFF) + (ctx.fetchedData & 0xFFF) > 0x1000 ? 1 : 0);
+         h = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xFFF) + (ctx.fetchedData & 0xFFF) >= 0x1000 ? 1 : 0);
          c = (sbyte)((UInt32)CPUUtil.CPUReadReg(ctx.CurrInst.reg1) + (UInt32)ctx.fetchedData >= 0x10000 ? 1 : 0);
       }
 
@@ -405,6 +409,63 @@ public static class CPUProc
 
       CPUUtil.CPUSetReg(ctx.CurrInst.reg1, (UInt16)(val & 0xFFFF));
       CPUSetFlags(ctx, z, 0, h, c);
+   }
+
+   /// <summary>
+   /// Process add carry (ADC) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcADC(CPUContext ctx)
+   {
+      UInt16 u = ctx.fetchedData;
+      UInt16 a = ctx.regs.a;
+      UInt16 c = (UInt16)(CPU.CPU_FLAG_C ? 1 : 0);
+
+      ctx.regs.a = (byte)((u + a + c) & 0xFF);
+
+      CPUSetFlags(
+         ctx,
+         (sbyte)(ctx.regs.a == 0 ? 1 : 0),
+         0,
+         (sbyte)((u & 0xF) + (a & 0xF) + c > 0xF ? 1 : 0),
+         (sbyte)((u + a + c) > 0xFF ? 1 : 0)
+         );
+   }
+
+   /// <summary>
+   /// Process subtract (SUB) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcSUB(CPUContext ctx)
+   {
+      UInt16 value = (UInt16)(CPUUtil.CPUReadReg(ctx.CurrInst.reg1) - ctx.fetchedData);
+
+      sbyte z = (sbyte)(value == 0 ? 1 : 0);
+      sbyte h = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xF) - (ctx.fetchedData & 0xF) < 0 ? 1 : 0);
+      sbyte c = (sbyte)(CPUUtil.CPUReadReg(ctx.CurrInst.reg1) - ctx.fetchedData < 0 ? 1 : 0);
+
+      CPUUtil.CPUSetReg(ctx.CurrInst.reg1, value);
+      CPUSetFlags(ctx, z, 1, h, c);
+   }
+
+   /// <summary>
+   /// Process subtract carry (SBC) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcSBC(CPUContext ctx)
+   {
+      byte value = (byte)(ctx.fetchedData + (CPU.CPU_FLAG_C ? 1 : 0));
+
+      sbyte z = (sbyte)(CPUUtil.CPUReadReg(ctx.CurrInst.reg1) - value == 0 ? 1 : 0);
+      sbyte h = (sbyte)
+         ((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xF) 
+         - (ctx.fetchedData & 0xF) - (CPU.CPU_FLAG_C ? 1 : 0) < 0 ? 1 : 0);
+      sbyte c = (sbyte)
+         (CPUUtil.CPUReadReg(ctx.CurrInst.reg1) 
+         - ctx.fetchedData - (CPU.CPU_FLAG_C ? 1 : 0) < 0 ? 1 : 0);
+
+      CPUUtil.CPUSetReg(ctx.CurrInst.reg1, (UInt16)(CPUUtil.CPUReadReg(ctx.CurrInst.reg1) - value));
+      CPUSetFlags(ctx, z, 1, h, c);
    }
 
    /// <summary>
