@@ -40,6 +40,8 @@ public static class CPUProc
          InType.IN_RST => ProcRST,
          InType.IN_RET => ProcRET,
          InType.IN_RETI => ProcRETI,
+         InType.IN_INC => ProcINC,
+         InType.IN_DEC => ProcDEC,
          _ => ProcNone
       };
    }
@@ -191,6 +193,16 @@ public static class CPUProc
          Common.BIT_SET(ref ctx.regs.f, 4, c);
       }
    }
+   
+   /// <summary>
+   /// Helper function. Check whether register is 16-bit 
+   /// </summary>
+   /// <param name="rt">register</param>
+   /// <returns>true if register is 16-bit, false otherwise</returns>
+   private static bool Is16Bit(RegType rt)
+   {
+      return (rt >= RegType.RT_AF);
+   }
 
    /// <summary>
    /// Process Load (LD) instructions
@@ -202,7 +214,7 @@ public static class CPUProc
       if (ctx.destIsMem)
       {
          // If 16-bit register
-         if (ctx.CurrInst.reg2 >= RegType.RT_AF)
+         if (Is16Bit(ctx.CurrInst.reg2))
          {
             Bus.BusWrite16(ctx.memDest, ctx.fetchedData);
             Emulator.EmuCycle(1);
@@ -257,12 +269,12 @@ public static class CPUProc
    /// <param name="ctx">The instance of CPUContext</param>
    public static void ProcPOP(CPUContext ctx)
    {
-      UInt16 hi = (UInt16)Stack.Pop();
-      Emulator.EmuCycle(1);
       UInt16 lo = (UInt16)Stack.Pop();
       Emulator.EmuCycle(1);
+      UInt16 hi = (UInt16)Stack.Pop();
+      Emulator.EmuCycle(1);
 
-      UInt16 n = (ushort)((hi << 8) | lo);
+      UInt16 n = (UInt16)((hi << 8) | lo);
 
       CPUUtil.CPUSetReg(ctx.CurrInst.reg1, n);
 
@@ -278,7 +290,7 @@ public static class CPUProc
    /// <param name="ctx">The instance of CPUContext</param>
    public static void ProcPUSH(CPUContext ctx)
    {
-      UInt16 hi = (UInt16)(CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xFF);
+      UInt16 hi = (UInt16)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) >> 8) & 0xFF);
       Emulator.EmuCycle(1);
       Stack.Push((byte)hi);
 
@@ -287,6 +299,112 @@ public static class CPUProc
       Stack.Push((byte)lo);
 
       Emulator.EmuCycle(1);
+   }
+
+   /// <summary>
+   /// Process increment (INC) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcINC(CPUContext ctx)
+   {
+      UInt16 val = (UInt16)(CPUUtil.CPUReadReg(ctx.CurrInst.reg1) + 1);
+
+      if (Is16Bit(ctx.CurrInst.reg1))
+      {
+         Emulator.EmuCycle(1);
+      }
+
+      if (ctx.CurrInst.reg1 == RegType.RT_HL && ctx.CurrInst.mode == AddrMode.AM_MR)
+      {
+         val = (UInt16)(Bus.BusRead(CPUUtil.CPUReadReg(ctx.CurrInst.reg1)) + 1);
+         val &= 0xFF;
+         Bus.BusWrite(CPUUtil.CPUReadReg(ctx.CurrInst.reg1), (byte)val);
+      } else
+      {
+         CPUUtil.CPUSetReg(ctx.CurrInst.reg1, val);
+         val = CPUUtil.CPUReadReg(ctx.CurrInst.reg1); 
+      }
+
+      if ((ctx.curOpcode & 0x03) == 0x03)
+      {
+         return;
+      }
+
+      CPUSetFlags(ctx, (sbyte)(val == 0 ? 1 : 0), 0, (sbyte)((val & 0x0F) == 0 ? 1 : 0), -1);
+   }
+
+   /// <summary>
+   /// Process decrement (DEC) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcDEC(CPUContext ctx)
+   {
+      UInt16 val = (UInt16)(CPUUtil.CPUReadReg(ctx.CurrInst.reg1) - 1);
+
+      if (Is16Bit(ctx.CurrInst.reg1))
+      {
+         Emulator.EmuCycle(1);
+      }
+
+      if (ctx.CurrInst.reg1 == RegType.RT_HL && ctx.CurrInst.mode == AddrMode.AM_MR)
+      {
+         val = (UInt16)(Bus.BusRead(CPUUtil.CPUReadReg(ctx.CurrInst.reg1)) - 1);
+         Bus.BusWrite(CPUUtil.CPUReadReg(ctx.CurrInst.reg1), (byte)val);
+      }
+      else
+      {
+         CPUUtil.CPUSetReg(ctx.CurrInst.reg1, val);
+         val = CPUUtil.CPUReadReg(ctx.CurrInst.reg1);
+      }
+
+      if ((ctx.curOpcode & 0x03) == 0x0B)
+      {
+         return;
+      }
+
+      CPUSetFlags(ctx, (sbyte)(val == 0 ? 1 : 0), 1, (sbyte)((val & 0x0F) == 0x0F ? 1 : 0), -1);
+   }
+
+   /// <summary>
+   /// Process ADD instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcADD(CPUContext ctx)
+   {
+      UInt32 val = (UInt32)(CPUUtil.CPUReadReg(ctx.CurrInst.reg1) + ctx.fetchedData);
+
+      bool Is16 = Is16Bit(ctx.CurrInst.reg1);
+
+      if (Is16)
+      {
+         Emulator.EmuCycle(1);
+      }
+
+      if (ctx.CurrInst.reg1 == RegType.RT_SP)
+      {
+         val = (UInt32)(CPUUtil.CPUReadReg(ctx.CurrInst.reg1) + (sbyte)ctx.fetchedData);
+      }
+
+      sbyte z = (sbyte)((val & 0xFF) == 0 ? 1 : 0);
+      sbyte h = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xF) + (ctx.fetchedData & 0xF) >= 0x10 ? 1 : 0);
+      sbyte c = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xFF) + (ctx.fetchedData & 0xFF) > 0x100 ? 1 : 0);
+
+      if (Is16)
+      {
+         z = -1;
+         h = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xFFF) + (ctx.fetchedData & 0xFFF) > 0x1000 ? 1 : 0);
+         c = (sbyte)((UInt32)CPUUtil.CPUReadReg(ctx.CurrInst.reg1) + (UInt32)ctx.fetchedData >= 0x10000 ? 1 : 0);
+      }
+
+      if (ctx.CurrInst.reg1 == RegType.RT_SP)
+      {
+         z = 0;
+         h = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xF) + (ctx.fetchedData & 0xF) >= 0x10 ? 1 : 0);
+         c = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xFF) + (ctx.fetchedData & 0xFF) > 0x100 ? 1 : 0);
+      }
+
+      CPUUtil.CPUSetReg(ctx.CurrInst.reg1, (UInt16)(val & 0xFFFF));
+      CPUSetFlags(ctx, z, 0, h, c);
    }
 
    /// <summary>
