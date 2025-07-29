@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.ApplicationInsights.Extensibility.Implementation;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,13 +27,17 @@ public static class CPUProc
    {
       return type switch
       {
-         InType.IN_NONE => ProcNone,
-         InType.IN_NOP => ProcNoop,
+         InType.IN_NONE => ProcNONE,
+         InType.IN_NOP => ProcNOP,
          InType.IN_LD => ProcLD,
          InType.IN_LDH => ProcLDH,
          InType.IN_JP => ProcJP,
          InType.IN_DI => ProcDI,
+         InType.IN_AND => ProcAND,
+         InType.IN_OR => ProcOR,
+         InType.IN_CP => ProcCP,
          InType.IN_XOR => ProcXOR,
+         InType.IN_CB => ProcCB,
          InType.IN_POP => ProcPOP,
          InType.IN_PUSH => ProcPUSH,
          InType.IN_JR => ProcJR,
@@ -46,16 +51,34 @@ public static class CPUProc
          InType.IN_SUB => ProcSUB,
          InType.IN_ADC => ProcADC,
          InType.IN_SBC => ProcSBC,
-         _ => ProcNone
+         _ => ProcNONE
       };
    }
-   public static void ProcNone(CPUContext ctx)
+
+   private static RegType[] RTLookUp = new RegType[8]
+   {
+      RegType.RT_B,
+      RegType.RT_C,
+      RegType.RT_D,
+      RegType.RT_E,
+      RegType.RT_H,
+      RegType.RT_L,
+      RegType.RT_HL,
+      RegType.RT_A,
+   };
+
+   public static RegType DecodeReg(byte reg) 
+   {
+      return reg < RTLookUp.Length ? RTLookUp[reg] : RegType.RT_NONE;
+   }
+
+   public static void ProcNONE(CPUContext ctx)
    {
       Console.WriteLine("Invalid Instruction");
       Environment.Exit(-7);
    }
 
-   public static void ProcNoop(CPUContext ctx)
+   public static void ProcNOP(CPUContext ctx)
    {
 
    }
@@ -249,6 +272,41 @@ public static class CPUProc
    }
 
    /// <summary>
+   /// Process AND instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcAND(CPUContext ctx)
+   {
+      ctx.regs.a &= (byte)ctx.fetchedData;
+      CPUSetFlags(ctx, (sbyte)(ctx.regs.a == 0 ? 1 : 0), 0, 1, 0);
+   }
+
+   /// <summary>
+   /// Process OR instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcOR(CPUContext ctx)
+   {
+      ctx.regs.a |= (byte)(ctx.fetchedData & 0xFF);
+      CPUSetFlags(ctx, (sbyte)(ctx.regs.a == 0 ? 1 : 0), 0, 0, 0);
+   }
+
+   /// <summary>
+   /// Process compare (CP) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcCP(CPUContext ctx)
+   {
+      int n = (int)ctx.regs.a - (int)ctx.fetchedData;
+
+      CPUSetFlags(ctx, 
+         (sbyte)(n == 0 ? 1 : 0), 
+         1, 
+         (sbyte)(((int)ctx.regs.a & 0x0F) - ((int)ctx.fetchedData & 0x0F) < 0 ? 1 : 0), 
+         (sbyte)(n < 0 ? 1 : 0));
+   }
+
+   /// <summary>
    /// Process XOR instructions
    /// </summary>
    /// <param name="ctx">The instance of CPUContext</param>
@@ -256,6 +314,93 @@ public static class CPUProc
    {
       ctx.regs.a ^= (byte)ctx.fetchedData;
       CPUSetFlags(ctx, (sbyte)(ctx.regs.a == 0 ? 1 : 0), 0, 0, 0);
+   }
+
+   /// <summary>
+   /// Process CB prefix (CB) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcCB(CPUContext ctx)
+   {
+      byte op = (byte)ctx.fetchedData;
+      RegType reg = DecodeReg((byte)(op & 0b111));
+
+      byte bit = (byte)((op >> 3) & 0b111);
+      byte bitOp = (byte)((op >> 6) & 0b111);
+      byte regVal = CPUUtil.CPUReadReg8(reg);
+
+      Emulator.EmuCycle(1);
+
+      if (reg == RegType.RT_HL)
+      {
+         Emulator.EmuCycle(2);
+      }
+
+      switch(bitOp)
+      {
+         // BIT
+         case 1:
+            CPUSetFlags(ctx, (sbyte)((regVal & (1 << bit)) == 0 ? 0 : 1), 0, 1, -1);
+            break;
+
+         // RST
+         case 2:
+            regVal &= (byte)~(1 << bit);
+            CPUUtil.CPUSetReg8(reg, regVal);
+            break;
+
+         // SET
+         case 3:
+            regVal |= (byte)(1 << bit);
+            CPUUtil.CPUSetReg8(reg, regVal);
+            break;
+      }
+
+      bool flagC = CPU.CPU_FLAG_C;
+
+      //TODO: part 8
+      switch (bit)
+      {
+         // RLC
+         case 0:
+
+            return;
+
+         // RRC
+         case 1:
+
+            return;
+
+         // RL
+         case 2:
+
+            return;
+
+         // RR
+         case 3:
+
+            return;
+
+         // SLA
+         case 4:
+
+            return;
+
+         // SRA
+         case 5:
+
+            return;
+
+         // SWAP
+         case 6:
+
+            return;
+
+         // SRL
+         case 7:
+
+            return;
+      }
    }
 
    /// <summary>

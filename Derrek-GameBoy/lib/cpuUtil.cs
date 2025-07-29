@@ -34,6 +34,7 @@ public static class CPUUtil
          case RegType.RT_SP: return CPU._context.regs.sp;
 
          default:
+            Console.WriteLine($"ERR INVALID REG16: {rt}");
             return (UInt16)0;
       }
    }
@@ -79,6 +80,48 @@ public static class CPUUtil
          case RegType.RT_SP: CPU._context.regs.sp = value; break;
 
          default: break;
+      }
+   }
+
+   public static byte CPUReadReg8(RegType rt)
+   {
+      switch (rt)
+      {
+         case RegType.RT_A: return CPU._context.regs.a;
+         case RegType.RT_F: return CPU._context.regs.f;
+         case RegType.RT_B: return CPU._context.regs.b;
+         case RegType.RT_C: return CPU._context.regs.c;
+         case RegType.RT_D: return CPU._context.regs.d;
+         case RegType.RT_E: return CPU._context.regs.e;
+         case RegType.RT_H: return CPU._context.regs.h;
+         case RegType.RT_L: return CPU._context.regs.l;
+         case RegType.RT_HL: return Bus.BusRead(CPUReadReg(RegType.RT_HL));
+
+         default:
+            Console.WriteLine($"ERR INVALID REG8: {rt}");
+            return 0;
+      }
+   }
+
+   public static void CPUSetReg8(RegType rt, byte value)
+   {
+      switch (rt)
+      {
+         case RegType.RT_A: CPU._context.regs.a = (byte)(value & 0xFF); break;
+         case RegType.RT_F: CPU._context.regs.f = (byte)(value & 0xFF); break;
+         case RegType.RT_B: CPU._context.regs.b = (byte)(value & 0xFF); break;
+         case RegType.RT_C: CPU._context.regs.c = (byte)(value & 0xFF); break;
+         case RegType.RT_D: CPU._context.regs.d = (byte)(value & 0xFF); break;
+         case RegType.RT_E: CPU._context.regs.e = (byte)(value & 0xFF); break;
+         case RegType.RT_H: CPU._context.regs.h = (byte)(value & 0xFF); break;
+         case RegType.RT_L: CPU._context.regs.l = (byte)(value & 0xFF); break;
+         case RegType.RT_HL:
+            Bus.BusWrite(CPUReadReg(RegType.RT_HL), value);
+            break;
+
+         default:
+            Console.WriteLine($"ERR INVALID REG8: {rt}"); 
+            break;
       }
    }
 }
