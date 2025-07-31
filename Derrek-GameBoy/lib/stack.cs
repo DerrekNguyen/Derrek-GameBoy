@@ -94,19 +94,19 @@ public static class Stack
    /// <summary>
    /// Push 8-bit 'data' into the stack and decrement the stack pointer
    /// </summary>
-   public static void Push(byte data)
+   public static void Push(CPUContext ctx, byte data)
    {
-      CPU._context.regs.sp--;
-      Bus.BusWrite(CPU._context.regs.sp, data);
+      ctx.regs.sp--;
+      Bus.BusWrite(ctx.regs.sp, data);
    }
 
    /// <summary>
    /// Push 16-bit 'data' into the stack and decrement the stack pointer
    /// </summary>
-   public static void Push16(UInt16 data)
+   public static void Push16(CPUContext ctx, UInt16 data)
    {
-      Push((byte)((data >> 8) & 0xFF));
-      Push((byte)(data & 0xFF));
+      Push(ctx, (byte)((data >> 8) & 0xFF));
+      Push(ctx, (byte)(data & 0xFF));
    }
 
    /// <summary>

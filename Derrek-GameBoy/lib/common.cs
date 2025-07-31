@@ -22,12 +22,12 @@ public static class Common
    /// <param name="n">Index of the bit</param>
    /// <param name="on">Signal whether to set (1), or clear (0)</param>
    /// <returns></returns>
-   public static byte BIT_SET(ref byte a, int n, sbyte on)
+   public static void BIT_SET(ref byte a, int n, sbyte on)
    {
       if (on != 0)
-         return (byte)(a | (1 << n));
+         a = (byte)(a | (1 << n));
       else
-         return (byte)(a & ~(1 << n));
+         a = (byte)(a & ~(1 << n));
    }
 
    /// <summary>

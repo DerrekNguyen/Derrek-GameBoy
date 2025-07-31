@@ -114,7 +114,7 @@ public static class CPUProc
          if (pushpc)
          {
             Emulator.EmuCycle(2); // pass 2 cycles since pushing 16-bit data (2 instances of 8-bit)
-            Stack.Push16(ctx.regs.pc);
+            Stack.Push16(ctx, ctx.regs.pc);
          }
 
          ctx.regs.pc = address;
@@ -363,44 +363,84 @@ public static class CPUProc
       {
          // RLC
          case 0:
+            bool setC = false;
+            byte result = (byte)((regVal << 1) & 0xFF);
 
+            if (((regVal) & (1 << 7)) != 0)
+            {
+               result |= 1;
+               setC = true;
+            }
+
+            CPUUtil.CPUSetReg8(reg, result);
+            CPUSetFlags(ctx, (sbyte)(result == 0 ? 1 : 0), 0, 0, (sbyte)(setC ? 1 : 0));
             return;
 
          // RRC
          case 1:
+            byte old1 = regVal;
+            regVal >>= 1;
+            regVal |= (byte)(old1 << 7);
 
+            CPUUtil.CPUSetReg8(reg, regVal);
+            CPUSetFlags(ctx, (sbyte)(regVal == 0 ? 1 : 0), 0, 0, (sbyte)(old1 & 1));
             return;
 
          // RL
          case 2:
+            byte old2 = regVal;
+            regVal <<= 1;
+            regVal |= (byte)(flagC ? 1 : 0);
 
+            CPUUtil.CPUSetReg8(reg, regVal);
+            CPUSetFlags(ctx, (sbyte)(regVal == 0 ? 1 : 0), 0, 0, (sbyte)((old2 & 0x80) != 0 ? 1 : 0));
             return;
 
          // RR
          case 3:
+            byte old3 = regVal;
+            regVal >>= 1;
+            regVal |= (byte)(flagC ? 0x80 : 0x00);
 
+            CPUUtil.CPUSetReg8(reg, regVal);
+            CPUSetFlags(ctx, (sbyte)(regVal == 0 ? 1 : 0), 0, 0, (sbyte)(old3 & 1));
             return;
 
          // SLA
          case 4:
+            byte old4 = regVal;
+            regVal <<= 1;
 
+            CPUUtil.CPUSetReg8(reg, regVal);
+            CPUSetFlags(ctx, (sbyte)(regVal == 0 ? 1 : 0), 0, 0, (sbyte)((old4 & 0x80) != 0 ? 1 : 0));
             return;
 
          // SRA
          case 5:
+            byte u5 = (byte)(regVal >> 1);
 
+            CPUUtil.CPUSetReg8(reg, u5);
+            CPUSetFlags(ctx, (sbyte)(u5 == 0 ? 1 : 0), 0, 0, (sbyte)(regVal & 1));
             return;
 
          // SWAP
          case 6:
+            regVal = (byte)(((regVal & 0xF0) >> 4) | ((regVal & 0xF) << 4));
 
+            CPUUtil.CPUSetReg8(reg, regVal);
+            CPUSetFlags(ctx, (sbyte)(regVal == 0 ? 1 : 0), 0, 0, 0);
             return;
 
          // SRL
          case 7:
+            byte u7 = (byte)(regVal >> 1);
 
+            CPUUtil.CPUSetReg8(reg, u7);
+            CPUSetFlags(ctx, (sbyte)(u7 == 0 ? 1 : 0), 0, 0, (sbyte)(regVal & 1));
             return;
       }
+
+      Console.WriteLine($"ERROR: INVALID CB: {op:X2}");
    }
 
    /// <summary>
@@ -441,11 +481,11 @@ public static class CPUProc
    {
       UInt16 hi = (UInt16)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) >> 8) & 0xFF);
       Emulator.EmuCycle(1);
-      Stack.Push((byte)hi);
+      Stack.Push(ctx, (byte)hi);
 
       UInt16 lo = (UInt16)(CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xFF);
       Emulator.EmuCycle(1);
-      Stack.Push((byte)lo);
+      Stack.Push(ctx, (byte)lo);
 
       Emulator.EmuCycle(1);
    }

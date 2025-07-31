@@ -10,7 +10,7 @@ class Program
    }
    static void Main()
    {
-      String[] args = [GetRomPath("tetris.gb")];
+      String[] args = [GetRomPath("cpu_instrs.gb")];
       Emulator.Run(args);
    }
 }
