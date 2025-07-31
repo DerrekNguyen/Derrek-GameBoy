@@ -91,7 +91,7 @@ public static class CPUProc
    {
       if (ctx.CurrInst.reg1 == RegType.RT_A)
       {
-         CPUUtil.CPUSetReg(ctx.CurrInst.reg1, Bus.BusRead((UInt16)(0xFF00 | ctx.fetchedData)));
+         CPUUtil.CPUSetReg(ctx.CurrInst.reg1, Bus.BusRead((UInt16)(0xFF00 + (ctx.fetchedData & 0xFF))));
       } 
       else
       {

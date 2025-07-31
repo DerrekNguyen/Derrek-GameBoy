@@ -54,20 +54,20 @@ public static class CPUUtil
 
          case RegType.RT_AF:
             ushort AF = value;
-            CPU._context.regs.f = (byte)(AF >> 8);
-            CPU._context.regs.e = (byte)(AF & 0xFF);
+            CPU._context.regs.a = (byte)(AF >> 8);
+            CPU._context.regs.f = (byte)(AF & 0xFF);
             break;
 
          case RegType.RT_BC:
             ushort BC = value;
-            CPU._context.regs.c = (byte)(BC >> 8);
-            CPU._context.regs.b = (byte)(BC & 0xFF);
+            CPU._context.regs.b = (byte)(BC >> 8);
+            CPU._context.regs.c = (byte)(BC & 0xFF);
             break;
 
          case RegType.RT_DE:
             ushort DE = value;
-            CPU._context.regs.e = (byte)(DE >> 8);
-            CPU._context.regs.d = (byte)(DE & 0xFF);
+            CPU._context.regs.d = (byte)(DE >> 8);
+            CPU._context.regs.e = (byte)(DE & 0xFF);
             break;
 
          case RegType.RT_HL:

@@ -84,12 +84,6 @@ public static class Bus
       }
       else if (address < 0xC000)
       {
-         // Char/map data
-         // TODO
-         Common.NO_IMPL();
-      }
-      else if (address < 0xC000)
-      {
          // Cartridge RAM
          Cart.CartWrite(address, value);
       }
