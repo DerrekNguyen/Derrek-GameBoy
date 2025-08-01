@@ -17,6 +17,7 @@ public class CPUContext
    public bool stepping;
 
    public bool intMasterEnabled;
+   public bool enablingIme;
 
    public byte ieRegister;
 }
@@ -25,9 +26,10 @@ public static class CPU
 {
    public static CPUContext _context = new();
 
-   public static bool CPU_FLAG_Z = Common.BIT(_context.regs.f, 7);
-
-   public static bool CPU_FLAG_C = Common.BIT(_context.regs.f, 4);
+   public static bool CPU_FLAG_Z => Common.BIT(_context.regs.f, 7);
+   public static bool CPU_FLAG_C => Common.BIT(_context.regs.f, 4);
+   public static bool CPU_FLAG_N => Common.BIT(_context.regs.f, 6);
+   public static bool CPU_FLAG_H => Common.BIT(_context.regs.f, 5);
 
    public static void CPU_Init()
    {

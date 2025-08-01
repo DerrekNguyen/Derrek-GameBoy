@@ -33,6 +33,7 @@ public static class CPUProc
          InType.IN_LDH => ProcLDH,
          InType.IN_JP => ProcJP,
          InType.IN_DI => ProcDI,
+         InType.IN_EI => ProcEI,
          InType.IN_AND => ProcAND,
          InType.IN_OR => ProcOR,
          InType.IN_CP => ProcCP,
@@ -51,6 +52,16 @@ public static class CPUProc
          InType.IN_SUB => ProcSUB,
          InType.IN_ADC => ProcADC,
          InType.IN_SBC => ProcSBC,
+         InType.IN_RRCA => ProcRRCA,
+         InType.IN_RLCA => ProcRLCA,
+         InType.IN_RLA => ProcRLA,
+         InType.IN_RRA => ProcRLA,
+         InType.IN_STOP => ProcSTOP,
+         InType.IN_HALT => ProcHALT,
+         InType.IN_DAA => ProcDAA,
+         InType.IN_CPL => ProcCPL,
+         InType.IN_SCF => ProcSCF,
+         InType.IN_CCF => ProcCCF,
          _ => ProcNONE
       };
    }
@@ -272,6 +283,63 @@ public static class CPUProc
    }
 
    /// <summary>
+   /// Process rotate left through carry with register a (RLCA) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcRLCA(CPUContext ctx)
+   {
+      byte u = ctx.regs.a;
+      byte c = (byte)((u >> 7) & 1);
+      u = (byte)((u << 1) | c);
+      ctx.regs.a = u;
+
+      CPUSetFlags(ctx, 0, 0, 0, (sbyte)c);
+   }
+
+   /// <summary>
+   /// Process rotate right through carry with register a (RRCA) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcRRCA(CPUContext ctx)
+   {
+      byte b = (byte)(ctx.regs.a & 1);
+      ctx.regs.a >>= 1;
+      ctx.regs.a |= (byte)(b << 7);
+
+      CPUSetFlags(ctx, 0, 0, 0, (sbyte)b);
+   }
+
+   /// <summary>
+   /// Process rotate left with register a (RLA) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcRLA(CPUContext ctx)
+   {
+      byte u = ctx.regs.a;
+      byte cf = (byte)(CPU.CPU_FLAG_C == true ? 1 : 0);
+      byte c = (byte)(ctx.regs.a >> 7 & 1);
+
+      ctx.regs.a = (byte)((u << 1) | cf);
+
+      CPUSetFlags(ctx, 0, 0, 0, (sbyte)c);
+   }
+
+   /// <summary>
+   /// Process rotate right with register a (RRA) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcRRA(CPUContext ctx)
+   {
+      byte cf = (byte)(CPU.CPU_FLAG_C == true ? 1 : 0);
+      byte c = (byte)(ctx.regs.a & 1);
+
+      ctx.regs.a >>= 1;
+      ctx.regs.a |= (byte)(cf << 7);
+
+      CPUSetFlags(ctx, 0, 0, 0, (sbyte)c);
+   }
+
+   /// <summary>
    /// Process AND instructions
    /// </summary>
    /// <param name="ctx">The instance of CPUContext</param>
@@ -450,6 +518,15 @@ public static class CPUProc
    public static void ProcDI(CPUContext ctx)
    {
       ctx.intMasterEnabled = false;
+   }
+
+   /// <summary>
+   /// Process Enable Interrupts (DI) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcEI(CPUContext ctx)
+   {
+      ctx.enablingIme = true;
    }
 
    /// <summary>
@@ -651,6 +728,79 @@ public static class CPUProc
 
       CPUUtil.CPUSetReg(ctx.CurrInst.reg1, (UInt16)(CPUUtil.CPUReadReg(ctx.CurrInst.reg1) - value));
       CPUSetFlags(ctx, z, 1, h, c);
+   }
+
+   /// <summary>
+   /// Process STOP instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcSTOP(CPUContext ctx)
+   {
+      Console.WriteLine("STOPPING!");
+      Common.NO_IMPL();
+   }
+
+   /// <summary>
+   /// Process decimal adjust AL after addition (DAA) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcDAA(CPUContext ctx)
+   {
+      byte u = 0;
+      int fc = 0;
+
+      if (CPU.CPU_FLAG_H || (CPU.CPU_FLAG_N && (ctx.regs.a & 0xF) > 9))
+      {
+         u = 6;
+      }
+
+      if (CPU.CPU_FLAG_C || (!CPU.CPU_FLAG_N && (ctx.regs.a > 99)))
+      {
+         u |= 0x60;
+         fc = 1;
+      }
+
+      ctx.regs.a += (byte)(CPU.CPU_FLAG_N ? -u : u);
+
+      CPUSetFlags(ctx, (sbyte)(ctx.regs.a == 0 ? 1 : 0), -1, 0, (sbyte)fc);
+   }
+
+   /// <summary>
+   /// Process complement (CPL) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcCPL(CPUContext ctx)
+   {
+      ctx.regs.a = (byte)~ctx.regs.a;
+      CPUSetFlags(ctx, -1, 1, 1, -1);
+   }
+
+   /// <summary>
+   /// Process set carry flag (SCF) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcSCF(CPUContext ctx)
+   {
+      CPUSetFlags(ctx, -1, 0, 0, 1);
+   }
+
+   /// <summary>
+   /// Process invert carry flag (CCF) instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcCCF(CPUContext ctx)
+   {
+      sbyte t = (sbyte)(CPU.CPU_FLAG_C ? 0 : 1);
+      CPUSetFlags(ctx, -1, 0, 0, t);
+   }
+
+   /// <summary>
+   /// Process HALT instructions
+   /// </summary>
+   /// <param name="ctx">The instance of CPUContext</param>
+   public static void ProcHALT(CPUContext ctx)
+   {
+      ctx.halted = true;
    }
 
    /// <summary>

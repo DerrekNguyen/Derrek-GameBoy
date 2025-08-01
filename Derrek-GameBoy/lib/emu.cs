@@ -85,6 +85,6 @@ public static class Emulator
    /// <param name="emu_cycles">number of CPU cycles</param>
    public static void EmuCycle(int emu_cycles) 
    {
-      //TODO: you know what to do
+      //TODO
    }
 }
