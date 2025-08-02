@@ -10,7 +10,7 @@ class Program
    }
    static void Main()
    {
-      String[] args = [GetRomPath("mem_timing.gb ")];
-      Emulator.Run(args);
+      String[] args = [GetRomPath("dmg-acid2.gb")];
+      Emulator.EmuRun(args);
    }
 }

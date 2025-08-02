@@ -7,9 +7,10 @@ using SDL2;
 
 public class EmuContext
 {
-   public bool Paused { get; set; }
-   public bool Running { get; set; }
-   public ulong Ticks { get; set; }
+   public bool Paused;
+   public bool Running;
+   public bool Die = false;
+   public ulong Ticks;
 }
 
 /* 
@@ -25,13 +26,42 @@ public class EmuContext
 public static class Emulator
 {
    private static readonly EmuContext _context = new();
+
+   private static Thread cpuThread;
    public static EmuContext GetContext() => _context;
 
    public static void Delay(uint ms)
    {
       System.Threading.Thread.Sleep((int)ms);
    }
-   public static int Run(String[] argv)
+
+   public static void CPURun()
+   {
+      CPU.CPU_Init();
+
+      _context.Paused = false;
+      _context.Running = true;
+      _context.Ticks = 0;
+
+      while (_context.Running)
+      {
+         if (_context.Paused)
+         {
+            Delay(10);
+            continue;
+         }
+
+         if (!CPU.CPU_Step())
+         {
+            Console.WriteLine("CPU Stopped");
+            return;
+         }
+
+         _context.Ticks++;
+      }
+   }
+
+   public static int EmuRun(String[] argv)
    {
       if (argv.Length < 1)
       {
@@ -46,35 +76,43 @@ public static class Emulator
 
       Console.WriteLine("Cart loaded...\n");
 
-      SDL2.SDL.SDL_Init(SDL2.SDL.SDL_INIT_VIDEO);
-      Console.WriteLine("SDL INIT");
+      UI.UIInit();
 
-      SDL2.SDL_ttf.TTF_Init();   
-      Console.WriteLine("TTF INIT");
-
-      _context.Paused = false;
-      _context.Running = true;
-      _context.Ticks = 0;
-
-      CPU.CPU_Init();
-
-      while (_context.Running)
+      try
       {
-         if (_context.Paused)
-         {
-            Delay(10);
-            continue;
-         }
-
-
-         if (!CPU.CPU_Step())
-         {
-            Console.WriteLine("CPU Stopped");
-            return -3;
-         }
-
-         _context.Ticks++;
+         cpuThread = new Thread(CPURun);
+         cpuThread.Start();
       }
+      catch (ThreadStateException ex)
+      {
+         Console.WriteLine("Thread already started: " + ex.Message);
+      }
+      catch (OutOfMemoryException ex)
+      {
+         Console.WriteLine("Not enough system resources to start thread: " + ex.Message);
+      }
+      catch (Exception ex)
+      {
+         Console.WriteLine("Unexpected error starting thread: " + ex.Message);
+      }
+
+      while (!_context.Die)
+      {
+         Thread.Sleep(1);
+         UI.UIHandleEvents();
+      }
+
+      _context.Running = false;
+
+      if (cpuThread != null && cpuThread.IsAlive)
+      {
+         cpuThread.Join();
+      }
+
+      SDL2.SDL.SDL_DestroyRenderer(UI.sdlRenderer);
+      SDL2.SDL.SDL_DestroyWindow(UI.sdlWindow);
+      SDL2.SDL_ttf.TTF_Quit();
+      SDL2.SDL.SDL_Quit();
 
       return 1;
    }

@@ -124,4 +124,14 @@ public static class CPUUtil
             break;
       }
    }
+
+   public static byte CPUGetIntFlags()
+   {
+      return CPU._context.intFlags;
+   }
+
+   public static void CPUSetIntFlags(byte value)
+   {
+      CPU._context.intFlags = value;
+   }
 }

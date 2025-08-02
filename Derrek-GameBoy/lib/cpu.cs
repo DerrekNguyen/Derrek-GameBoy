@@ -20,6 +20,7 @@ public class CPUContext
    public bool enablingIme;
 
    public byte ieRegister;
+   public byte intFlags;
 }
 
 public static class CPU
@@ -86,6 +87,19 @@ public static class CPU
          }
 
          Execute();
+      } else
+      {
+         Emulator.EmuCycle(1);
+
+         if (_context.intFlags != 0)
+         {
+            _context.halted = false;
+         }
+      }
+
+      if (_context.intMasterEnabled)
+      {
+
       }
 
       return true;
