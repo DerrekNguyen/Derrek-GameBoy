@@ -72,8 +72,11 @@ public static class CPU
              (_context.regs.f & (1 << 4)) != 0 ? 'C' : '-'
          );
 
+         string inst;
+         InstLookUp.InstToStr(ref _context, out inst);
+
          Console.WriteLine($"{Emulator.GetContext().Ticks:X8} - " +
-            $"{pc:X4}: {InstLookUp.InstName(_context.CurrInst.type), 7} " +
+            $"{pc:X4}: {inst, 12} " +
             $"({_context.curOpcode:X2} {Bus.BusRead((ushort)(pc + 1)):X2} {Bus.BusRead((ushort)(pc + 2)):X2}) " +
             $"A: {_context.regs.a:X2} F: {flags}" +
             $" BC: {_context.regs.b:X2}{_context.regs.c:X2} " +

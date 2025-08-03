@@ -10,7 +10,7 @@ class Program
    }
    static void Main()
    {
-      String[] args = [GetRomPath("dmg-acid2.gb")];
+      String[] args = [GetRomPath("01-special.gb")];
       Emulator.EmuRun(args);
    }
 }

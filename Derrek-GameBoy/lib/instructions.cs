@@ -185,6 +185,112 @@ public static class InstLookUp
 
       return table[index];
    }
+
+   public static string[] RTLookUp = new string[]
+   {
+      "<NONE>",
+      "A",
+      "F",
+      "B",
+      "C",
+      "D",
+      "E",
+      "H",
+      "L",
+      "AF",
+      "BC",
+      "DE",
+      "HL",
+      "SP",
+      "PC"
+   };
+
+   public static void InstToStr(ref CPUContext ctx, out string str)
+   {
+      Instruction inst = ctx.CurrInst;
+      str = $"{InstName(inst.type)} ";
+
+      switch (inst.mode)
+      {
+         case AddrMode.AM_IMP:
+            return;
+
+         case AddrMode.AM_R_D16:
+         case AddrMode.AM_R_A16:
+            str = $"{InstName(inst.type)} {RTLookUp[(int)inst.reg1]},${ctx.fetchedData:X4}";
+            return;
+
+         case AddrMode.AM_R:
+            str = $"{InstName(inst.type)} {RTLookUp[(int)inst.reg1]}";
+            return;
+
+         case AddrMode.AM_R_R:
+            str = $"{InstName(inst.type)} {RTLookUp[(int)inst.reg1]},{RTLookUp[(int)inst.reg2]}";
+            return;
+
+         case AddrMode.AM_MR_R:
+            str = $"{InstName(inst.type)} ({RTLookUp[(int)inst.reg1]}),{RTLookUp[(int)inst.reg2]}";
+            return;
+
+         case AddrMode.AM_MR:
+            str = $"{InstName(inst.type)} ({RTLookUp[(int)inst.reg1]})";
+            return;
+
+         case AddrMode.AM_R_MR:
+            str = $"{InstName(inst.type)} {RTLookUp[(int)inst.reg1]},({RTLookUp[(int)inst.reg2]})";
+            return;
+
+         case AddrMode.AM_R_D8:
+         case AddrMode.AM_R_A8:
+            str = $"{InstName(inst.type)} {RTLookUp[(int)inst.reg1]},${(ctx.fetchedData & 0xFF):X2}";
+            return;
+
+         case AddrMode.AM_R_HLI:
+            str = $"{InstName(inst.type)} {RTLookUp[(int)inst.reg1]},({RTLookUp[(int)inst.reg2]}+)";
+            return;
+
+         case AddrMode.AM_R_HLD:
+            str = $"{InstName(inst.type)} {RTLookUp[(int)inst.reg1]},({RTLookUp[(int)inst.reg2]}-)";
+            return;
+
+         case AddrMode.AM_HLI_R:
+            str = $"{InstName(inst.type)} ({RTLookUp[(int)inst.reg1]}+),{RTLookUp[(int)inst.reg2]}";
+            return;
+
+         case AddrMode.AM_HLD_R:
+            str = $"{InstName(inst.type)} ({RTLookUp[(int)inst.reg1]}-),{RTLookUp[(int)inst.reg2]}";
+            return;
+
+         case AddrMode.AM_A8_R:
+            str = $"{InstName(inst.type)} {Bus.BusRead((UInt16)(ctx.regs.pc - 1)):X2},{RTLookUp[(int)inst.reg2]}";
+            return;
+
+         case AddrMode.AM_HL_SPR:
+            str = $"{InstName(inst.type)} ({RTLookUp[(int)inst.reg1]}),SP+{ctx.fetchedData & 0xFF}";
+            return;
+
+         case AddrMode.AM_D8:
+            str = $"{InstName(inst.type)} ${ctx.fetchedData & 0xFF:X2}";
+            return;
+
+         case AddrMode.AM_D16:
+            str = $"{InstName(inst.type)} ${ctx.fetchedData:X4}";
+            return;
+
+         case AddrMode.AM_MR_D8:
+            str = $"{InstName(inst.type)} ({RTLookUp[(int)inst.reg1]}),${ctx.fetchedData & 0xFF:X2}";
+            return;
+
+         case AddrMode.AM_A16_R:
+            str = $"{InstName(inst.type)} (${ctx.fetchedData:X4}),{RTLookUp[(int)inst.reg2]}";
+            return;
+
+         default:
+            Console.Error.WriteLine($"INVALID AM: {(int)inst.mode}");
+            Common.NO_IMPL();
+            return;
+      }
+   }
 }
 
 public class Instruction
@@ -197,9 +303,9 @@ public class Instruction
    public byte param;
 
    public Instruction(
-      InType inType = InType.IN_NONE, 
-      AddrMode addrMode = AddrMode.AM_IMP, 
-      RegType regType1 = RegType.RT_NONE, 
+      InType inType = InType.IN_NONE,
+      AddrMode addrMode = AddrMode.AM_IMP,
+      RegType regType1 = RegType.RT_NONE,
       RegType regType2 = RegType.RT_NONE,
       CondType condType = CondType.CT_NONE,
       byte p = 0)
@@ -262,7 +368,7 @@ public static class Instructions
       _instructions[0x24] = new Instruction(InType.IN_INC, AddrMode.AM_R, RegType.RT_H);
       _instructions[0x25] = new Instruction(InType.IN_DEC, AddrMode.AM_R, RegType.RT_H);
       _instructions[0x26] = new Instruction(InType.IN_LD, AddrMode.AM_R_D8, RegType.RT_H);
-
+      _instructions[0x26] = new Instruction(InType.IN_DAA);
       _instructions[0x28] = new Instruction(InType.IN_JR, AddrMode.AM_D8, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_Z);
       _instructions[0x29] = new Instruction(InType.IN_ADD, AddrMode.AM_R_R, RegType.RT_HL, RegType.RT_HL);
       _instructions[0x2A] = new Instruction(InType.IN_LD, AddrMode.AM_R_HLI, RegType.RT_A, RegType.RT_HL);
@@ -270,6 +376,7 @@ public static class Instructions
       _instructions[0x2C] = new Instruction(InType.IN_INC, AddrMode.AM_R, RegType.RT_L);
       _instructions[0x2D] = new Instruction(InType.IN_DEC, AddrMode.AM_R, RegType.RT_L);
       _instructions[0x2E] = new Instruction(InType.IN_LD, AddrMode.AM_R_D8, RegType.RT_L);
+      _instructions[0x27] = new Instruction(InType.IN_CPL);
 
       // 0x3*
       _instructions[0x30] = new Instruction(InType.IN_JR, AddrMode.AM_D8, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_NC);
@@ -279,7 +386,7 @@ public static class Instructions
       _instructions[0x34] = new Instruction(InType.IN_INC, AddrMode.AM_MR, RegType.RT_HL);
       _instructions[0x35] = new Instruction(InType.IN_DEC, AddrMode.AM_R, RegType.RT_HL);
       _instructions[0x36] = new Instruction(InType.IN_LD, AddrMode.AM_MR_D8, RegType.RT_HL);
-
+      _instructions[0x37] = new Instruction(InType.IN_SCF);
       _instructions[0x38] = new Instruction(InType.IN_JR, AddrMode.AM_D8, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_C);
       _instructions[0x39] = new Instruction(InType.IN_ADD, AddrMode.AM_R_R, RegType.RT_HL, RegType.RT_SP);
       _instructions[0x3A] = new Instruction(InType.IN_LD, AddrMode.AM_R_HLD, RegType.RT_A, RegType.RT_HL);
@@ -287,6 +394,7 @@ public static class Instructions
       _instructions[0x3C] = new Instruction(InType.IN_INC, AddrMode.AM_R, RegType.RT_A);
       _instructions[0x3D] = new Instruction(InType.IN_DEC, AddrMode.AM_R, RegType.RT_A);
       _instructions[0x3E] = new Instruction(InType.IN_LD, AddrMode.AM_R_D8, RegType.RT_A);
+      _instructions[0x3F] = new Instruction(InType.IN_CCF);
 
       // 0x4*
       _instructions[0x40] = new Instruction(InType.IN_LD, AddrMode.AM_R_R, RegType.RT_B, RegType.RT_B);
@@ -457,7 +565,7 @@ public static class Instructions
       _instructions[0xD2] = new Instruction(InType.IN_JP, AddrMode.AM_D16, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_NC);
       _instructions[0xD4] = new Instruction(InType.IN_CALL, AddrMode.AM_D16, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_NC);
       _instructions[0xD5] = new Instruction(InType.IN_PUSH, AddrMode.AM_R, RegType.RT_DE);
-      _instructions[0xD6] = new Instruction(InType.IN_SUB, AddrMode.AM_D8);
+      _instructions[0xD6] = new Instruction(InType.IN_SUB, AddrMode.AM_R_D8, RegType.RT_A);
       _instructions[0xD7] = new Instruction(InType.IN_RST, AddrMode.AM_IMP, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_NONE, 0x10);
 
       _instructions[0xD8] = new Instruction(InType.IN_RET, AddrMode.AM_IMP, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_C);
@@ -465,7 +573,7 @@ public static class Instructions
       _instructions[0xDA] = new Instruction(InType.IN_JP, AddrMode.AM_D16, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_C);
 
       _instructions[0xDC] = new Instruction(InType.IN_CALL, AddrMode.AM_D16, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_C);
-      
+
       _instructions[0xDE] = new Instruction(InType.IN_SBC, AddrMode.AM_R_D8, RegType.RT_A);
       _instructions[0xDF] = new Instruction(InType.IN_RST, AddrMode.AM_IMP, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_NONE, 0x18);
 
@@ -475,13 +583,13 @@ public static class Instructions
       _instructions[0xE2] = new Instruction(InType.IN_LD, AddrMode.AM_MR_R, RegType.RT_C, RegType.RT_A);
 
       _instructions[0xE5] = new Instruction(InType.IN_PUSH, AddrMode.AM_R, RegType.RT_HL);
-      _instructions[0xE6] = new Instruction(InType.IN_AND, AddrMode.AM_D8);
+      _instructions[0xE6] = new Instruction(InType.IN_AND, AddrMode.AM_R_D8, RegType.RT_A);
       _instructions[0xE7] = new Instruction(InType.IN_RST, AddrMode.AM_IMP, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_NONE, 0x20);
       _instructions[0xE8] = new Instruction(InType.IN_ADD, AddrMode.AM_R_D8, RegType.RT_SP);
-      _instructions[0xE9] = new Instruction(InType.IN_JP, AddrMode.AM_MR, RegType.RT_HL);
+      _instructions[0xE9] = new Instruction(InType.IN_JP, AddrMode.AM_R, RegType.RT_HL);
       _instructions[0xEA] = new Instruction(InType.IN_LD, AddrMode.AM_A16_R, RegType.RT_NONE, RegType.RT_A);
 
-      _instructions[0xEE] = new Instruction(InType.IN_XOR, AddrMode.AM_D8);
+      _instructions[0xEE] = new Instruction(InType.IN_XOR, AddrMode.AM_R_D8, RegType.RT_A);
       _instructions[0xEF] = new Instruction(InType.IN_RST, AddrMode.AM_IMP, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_NONE, 0x28);
 
       // 0xF*
@@ -491,13 +599,13 @@ public static class Instructions
       _instructions[0xF3] = new Instruction(InType.IN_DI);
 
       _instructions[0xF5] = new Instruction(InType.IN_PUSH, AddrMode.AM_R, RegType.RT_AF);
-      _instructions[0xF6] = new Instruction(InType.IN_OR, AddrMode.AM_D8);
+      _instructions[0xF6] = new Instruction(InType.IN_OR, AddrMode.AM_R_D8, RegType.RT_A);
       _instructions[0xF7] = new Instruction(InType.IN_RST, AddrMode.AM_IMP, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_NONE, 0x30);
       _instructions[0xF8] = new Instruction(InType.IN_LD, AddrMode.AM_HL_SPR, RegType.RT_HL, RegType.RT_SP);
       _instructions[0xF9] = new Instruction(InType.IN_LD, AddrMode.AM_R_R, RegType.RT_SP, RegType.RT_HL);
       _instructions[0xFA] = new Instruction(InType.IN_LD, AddrMode.AM_R_A16, RegType.RT_A, RegType.RT_NONE);
       _instructions[0xFB] = new Instruction(InType.IN_EI);
-      _instructions[0xFE] = new Instruction(InType.IN_CP, AddrMode.AM_D8);
+      _instructions[0xFE] = new Instruction(InType.IN_CP, AddrMode.AM_R_D8, RegType.RT_A);
       _instructions[0xFF] = new Instruction(InType.IN_RST, AddrMode.AM_IMP, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_NONE, 0x38);
    }
 

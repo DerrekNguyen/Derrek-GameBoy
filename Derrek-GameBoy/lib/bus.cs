@@ -60,9 +60,8 @@ public static class Bus
       {
          // I/O registers
          // TODO
-         Console.WriteLine($"UNSUPPORTED BusRead({address})");
          //Common.NO_IMPL();
-         return 0x0;
+         return IO.IORead(address);
       }
       else if (address == 0xFFFF)
       {
@@ -116,7 +115,7 @@ public static class Bus
       {
          // I/O Registers
          // TODO
-         Console.WriteLine("I/O, not supported yet");
+         IO.IOWrite(address, value);
       }
       else if (address == 0xFFFF)
       {
