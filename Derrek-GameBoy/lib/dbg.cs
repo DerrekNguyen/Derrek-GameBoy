@@ -25,7 +25,6 @@ public static class DBG
       {
          string msg = new string(DBGMsg, 0, MsgSize);
          Console.WriteLine($"DBG: {msg}");
-         Environment.Exit(0);
       }
    }
 }

@@ -368,7 +368,7 @@ public static class Instructions
       _instructions[0x24] = new Instruction(InType.IN_INC, AddrMode.AM_R, RegType.RT_H);
       _instructions[0x25] = new Instruction(InType.IN_DEC, AddrMode.AM_R, RegType.RT_H);
       _instructions[0x26] = new Instruction(InType.IN_LD, AddrMode.AM_R_D8, RegType.RT_H);
-      _instructions[0x26] = new Instruction(InType.IN_DAA);
+      _instructions[0x27] = new Instruction(InType.IN_DAA);
       _instructions[0x28] = new Instruction(InType.IN_JR, AddrMode.AM_D8, RegType.RT_NONE, RegType.RT_NONE, CondType.CT_Z);
       _instructions[0x29] = new Instruction(InType.IN_ADD, AddrMode.AM_R_R, RegType.RT_HL, RegType.RT_HL);
       _instructions[0x2A] = new Instruction(InType.IN_LD, AddrMode.AM_R_HLI, RegType.RT_A, RegType.RT_HL);
