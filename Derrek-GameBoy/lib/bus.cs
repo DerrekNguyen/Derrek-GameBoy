@@ -47,8 +47,8 @@ public static class Bus
       {
          // 0AM
          // TODO
-         Console.WriteLine($"UNSUPPORTED BusRead({address})");
-         //Common.NO_IMPL();
+         Console.WriteLine($"UNSUPPORTED BusRead({address:X4})");
+         Common.NO_IMPL();
          return 0x0;
       }
       else if (address < 0xFF00)
@@ -60,7 +60,6 @@ public static class Bus
       {
          // I/O registers
          // TODO
-         //Common.NO_IMPL();
          return IO.IORead(address);
       }
       else if (address == 0xFFFF)
@@ -69,7 +68,8 @@ public static class Bus
          // TODO
          return CPU._context.ieRegister;
       }
-      return 0;
+
+      return RAM.HRamRead(address);
    }
 
    public static void BusWrite(UInt16 address, byte value)
@@ -83,7 +83,7 @@ public static class Bus
       {
          // Char/map data
          // TODO
-         Console.WriteLine($"UNSUPPORTED BusWrite({address})");
+         Console.WriteLine($"UNSUPPORTED BusWrite({address:X4})");
          //Common.NO_IMPL();
       }
       else if (address < 0xC000)
@@ -104,7 +104,7 @@ public static class Bus
       {
          // OAM
          //TODO
-         Console.WriteLine($"UNSUPPORTED BusRead({address})");
+         Console.WriteLine($"UNSUPPORTED BusWrite({address:X4})");
          //Common.NO_IMPL();
       }
       else if (address < 0xFF00)

@@ -262,7 +262,7 @@ public static class InstLookUp
             return;
 
          case AddrMode.AM_A8_R:
-            str = $"{InstName(inst.type)} {Bus.BusRead((UInt16)(ctx.regs.pc - 1)):X2},{RTLookUp[(int)inst.reg2]}";
+            str = $"{InstName(inst.type)} ${Bus.BusRead((UInt16)(ctx.regs.pc - 1)):X2},{RTLookUp[(int)inst.reg2]}";
             return;
 
          case AddrMode.AM_HL_SPR:

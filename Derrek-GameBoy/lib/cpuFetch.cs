@@ -59,7 +59,7 @@ public static class CPUFetch
          case AddrMode.AM_R_MR:
             UInt16 addr1 = CPUUtil.CPUReadReg(_context.CurrInst.reg2);
 
-            if (_context.CurrInst.reg1 == RegType.RT_C)
+            if (_context.CurrInst.reg2 == RegType.RT_C)
             {
                addr1 |= 0xFF00;
             }
@@ -69,13 +69,13 @@ public static class CPUFetch
             return;
 
          case AddrMode.AM_R_HLI:
-            _context.fetchedData = CPUUtil.CPUReadReg(_context.CurrInst.reg2);
+            _context.fetchedData = Bus.BusRead(CPUUtil.CPUReadReg(_context.CurrInst.reg2));
             Emulator.EmuCycle(1);
             CPUUtil.CPUSetReg(RegType.RT_HL, (ushort)(CPUUtil.CPUReadReg(RegType.RT_HL) + 1));
             return;
 
          case AddrMode.AM_R_HLD:
-            _context.fetchedData = CPUUtil.CPUReadReg(_context.CurrInst.reg2);
+            _context.fetchedData = Bus.BusRead(CPUUtil.CPUReadReg(_context.CurrInst.reg2));
             Emulator.EmuCycle(1);
             CPUUtil.CPUSetReg(RegType.RT_HL, (ushort)(CPUUtil.CPUReadReg(RegType.RT_HL) - 1));
             return;
@@ -157,10 +157,10 @@ public static class CPUFetch
             Emulator.EmuCycle(1);
 
             UInt16 addr2 = (ushort)(low3 | (high3 << 8));
-            _context.fetchedData = Bus.BusRead(addr2);
-            Emulator.EmuCycle(1);
 
             _context.regs.pc += 2;
+            _context.fetchedData = Bus.BusRead(addr2);
+            Emulator.EmuCycle(1);
 
             return;
 

@@ -32,13 +32,32 @@ public static class CPU
    public static bool CPU_FLAG_N => Common.BIT(_context.regs.f, 6);
    public static bool CPU_FLAG_H => Common.BIT(_context.regs.f, 5);
 
-   public static void CPU_Init()
+   public static void Init()
    {
       _context.regs.pc = 0x100;
+      _context.regs.sp = 0xFFFE;
       _context.regs.a = 0x01;
+      _context.regs.b = 0x00;
+      _context.regs.d = 0x00;
+      _context.regs.h = 0x01;
+      _context.regs.f = 0xB0;
+      _context.regs.c = 0x13;
+      _context.regs.e = 0xD8;
+      _context.regs.l = 0x4D;
+      _context.ieRegister = 0;
+      _context.intFlags = 0;
+      _context.intMasterEnabled = false;
+      _context.enablingIme = false;
+
+      Timer._context.div = 0xABCC;
    }
 
-   public static void Fetch_Instruction()
+   public static void RequestInterrupt(InterruptType t)
+   {
+      _context.intFlags |= (byte)(int)t;
+   }
+
+   public static void FetchInstruction()
    {
       _context.curOpcode = Bus.BusRead(_context.regs.pc++);
       _context.CurrInst = Instructions.Instruction_By_Opcode(_context.curOpcode);
@@ -58,11 +77,12 @@ public static class CPU
 
    public static bool CPU_Step()
    {
-      if (!_context.halted)
+      if (!_context.halted && Emulator.GetContext().Ticks < 388800)
       {
          UInt16 pc = _context.regs.pc;
 
-         Fetch_Instruction();
+         FetchInstruction();
+         Emulator.EmuCycle(1);
          CPUFetch.Fetch_Data(_context);
 
          string flags = string.Format("{0}{1}{2}{3}",
@@ -76,18 +96,20 @@ public static class CPU
          InstLookUp.InstToStr(ref _context, out inst);
 
          Console.WriteLine($"{Emulator.GetContext().Ticks:X8} - " +
-            $"{pc:X4}: {inst, 12} " +
+            $"{pc:X4}: {inst,-12} " +
             $"({_context.curOpcode:X2} {Bus.BusRead((ushort)(pc + 1)):X2} {Bus.BusRead((ushort)(pc + 2)):X2}) " +
-            $"A: {_context.regs.a:X2} F: {flags}" +
+            $"A: {_context.regs.a:X2} F: {flags} " +
             $" BC: {_context.regs.b:X2}{_context.regs.c:X2} " +
-            $"DE: {_context.regs.d:X2}{_context.regs.e:X2} HL: {_context.regs.h:X2}{_context.regs.l:X2}");
+            $"DE: {_context.regs.d:X2}{_context.regs.e:X2} HL: {_context.regs.h:X2}{_context.regs.l:X2} Data: {_context.fetchedData:X8}");
 
          if (_context.CurrInst == null)
          {
             Console.WriteLine($"Unknown Instruction: {_context.curOpcode:X2}");
             Environment.Exit(-7);
-            return false;
          }
+
+         DBG.Update();
+         DBG.Print();
 
          Execute();
       } else

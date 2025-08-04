@@ -37,7 +37,8 @@ public static class Emulator
 
    public static void CPURun()
    {
-      CPU.CPU_Init();
+      Timer.Init();
+      CPU.Init();
 
       _context.Paused = false;
       _context.Running = true;
@@ -56,8 +57,6 @@ public static class Emulator
             Console.WriteLine("CPU Stopped");
             return;
          }
-
-         _context.Ticks++;
       }
    }
 
@@ -121,8 +120,15 @@ public static class Emulator
    /// Pass an amount of CPU cycles to synchronize the PPU.
    /// </summary>
    /// <param name="emu_cycles">number of CPU cycles</param>
-   public static void EmuCycle(int emu_cycles) 
+   public static void EmuCycle(int CPUCycles) 
    {
       //TODO
+      int n = CPUCycles * 4;
+
+      for (int i = 0; i < n; i++)
+      {
+         _context.Ticks++;
+         Timer.Tick();
+      }
    }
 }

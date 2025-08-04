@@ -102,11 +102,11 @@ public static class CPUProc
    {
       if (ctx.CurrInst.reg1 == RegType.RT_A)
       {
-         CPUUtil.CPUSetReg(ctx.CurrInst.reg1, Bus.BusRead((UInt16)(0xFF00 + (ctx.fetchedData & 0xFF))));
+         CPUUtil.CPUSetReg(ctx.CurrInst.reg1, Bus.BusRead((UInt16)(0xFF00 | ctx.fetchedData)));
       } 
       else
       {
-         Bus.BusWrite((UInt16)(0xFF00 | ctx.fetchedData), (byte)CPUUtil.CPUReadReg(ctx.CurrInst.reg2));
+         Bus.BusWrite(ctx.memDest, ctx.regs.a);
       }
 
       Emulator.EmuCycle(1);
@@ -666,7 +666,7 @@ public static class CPUProc
       {
          z = 0;
          h = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xF) + (ctx.fetchedData & 0xF) >= 0x10 ? 1 : 0);
-         c = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xFF) + (ctx.fetchedData & 0xFF) > 0x100 ? 1 : 0);
+         c = (sbyte)((CPUUtil.CPUReadReg(ctx.CurrInst.reg1) & 0xFF) + (ctx.fetchedData & 0xFF) >= 0x100 ? 1 : 0);
       }
 
       CPUUtil.CPUSetReg(ctx.CurrInst.reg1, (UInt16)(val & 0xFFFF));

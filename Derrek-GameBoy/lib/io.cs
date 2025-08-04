@@ -13,9 +13,17 @@ public static class IO
       if (address == 0xFF01)
       {
          return SerialData[0];
-      } else if (address == 0xFF02)
+      } 
+      else if (address == 0xFF02)
       {
          return SerialData[1];
+      } 
+      else if (Common.BETWEEN(address, 0xFF04, 0xFF07))
+      {
+         return Timer.Read(address);
+      } 
+      else if (address == 0xFF0F) {
+         return CPU._context.intFlags;
       }
 
       Console.WriteLine($"UNSUPPORTED BusRead({address:X4})");
@@ -34,6 +42,18 @@ public static class IO
          SerialData[1] = value;
          return;
       }
+      else if (Common.BETWEEN(address, 0xFF04, 0xFF07))
+      {
+         Timer.Write(address, value);
+         return;
+      }
+      else if (address == 0xFF0F)
+      {
+         CPU._context.intFlags = value;
+         return;
+      }
+
+      Console.WriteLine($"UNSUPPORTED BusRead({address:X4})");
    }
 }
 

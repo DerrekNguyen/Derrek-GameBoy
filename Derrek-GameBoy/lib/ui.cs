@@ -14,9 +14,7 @@ public static class UI
    public static void UIInit()
    {
       SDL2.SDL.SDL_Init(SDL2.SDL.SDL_INIT_VIDEO);
-      Console.WriteLine("SDL INIT");
       SDL2.SDL_ttf.TTF_Init();
-      Console.WriteLine("TTF INIT");
 
       SDL2.SDL.SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, 0, out sdlWindow, out sdlRenderer);
    }
