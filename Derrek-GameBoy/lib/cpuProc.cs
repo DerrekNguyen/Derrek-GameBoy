@@ -55,7 +55,7 @@ public static class CPUProc
          InType.IN_RRCA => ProcRRCA,
          InType.IN_RLCA => ProcRLCA,
          InType.IN_RLA => ProcRLA,
-         InType.IN_RRA => ProcRLA,
+         InType.IN_RRA => ProcRRA,
          InType.IN_STOP => ProcSTOP,
          InType.IN_HALT => ProcHALT,
          InType.IN_DAA => ProcDAA,
