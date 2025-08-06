@@ -10,7 +10,7 @@ class Program
    }
    static void Main()
    {
-      String[] args = [GetRomPath("02-interrupts.gb")];
+      String[] args = [GetRomPath("01-special.gb")];
       Emulator.EmuRun(args);
    }
 }

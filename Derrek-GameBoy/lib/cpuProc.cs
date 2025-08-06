@@ -408,20 +408,20 @@ public static class CPUProc
       {
          // BIT
          case 1:
-            CPUSetFlags(ctx, (sbyte)((regVal & (1 << bit)) == 0 ? 0 : 1), 0, 1, -1);
-            break;
+            CPUSetFlags(ctx, (sbyte)((regVal & (1 << bit)) == 0 ? 1 : 0), 0, 1, -1);
+            return;
 
          // RST
          case 2:
             regVal &= (byte)~(1 << bit);
             CPUUtil.CPUSetReg8(reg, regVal);
-            break;
+            return;
 
          // SET
          case 3:
             regVal |= (byte)(1 << bit);
             CPUUtil.CPUSetReg8(reg, regVal);
-            break;
+            return;
       }
 
       bool flagC = CPU.CPU_FLAG_C;
@@ -485,7 +485,7 @@ public static class CPUProc
 
          // SRA
          case 5:
-            byte u5 = (byte)(regVal >> 1);
+            byte u5 = (byte)((regVal >> 1) | (regVal & 0x80));
 
             CPUUtil.CPUSetReg8(reg, u5);
             CPUSetFlags(ctx, (sbyte)(u5 == 0 ? 1 : 0), 0, 0, (sbyte)(regVal & 1));
@@ -623,7 +623,7 @@ public static class CPUProc
          val = CPUUtil.CPUReadReg(ctx.CurrInst.reg1);
       }
 
-      if ((ctx.curOpcode & 0x03) == 0x0B)
+      if ((ctx.curOpcode & 0x0B) == 0x0B)
       {
          return;
       }
@@ -749,18 +749,18 @@ public static class CPUProc
       byte u = 0;
       int fc = 0;
 
-      if (CPU.CPU_FLAG_H || (CPU.CPU_FLAG_N && (ctx.regs.a & 0xF) > 9))
+      if (CPU.CPU_FLAG_H || (!CPU.CPU_FLAG_N && (ctx.regs.a & 0xF) > 9))
       {
          u = 6;
       }
 
-      if (CPU.CPU_FLAG_C || (!CPU.CPU_FLAG_N && (ctx.regs.a > 99)))
+      if (CPU.CPU_FLAG_C || (!CPU.CPU_FLAG_N && (ctx.regs.a > 0x99)))
       {
          u |= 0x60;
          fc = 1;
       }
 
-      ctx.regs.a += (byte)(CPU.CPU_FLAG_N ? -u : u);
+      ctx.regs.a = (byte)(ctx.regs.a + (CPU.CPU_FLAG_N ? -u : u));
 
       CPUSetFlags(ctx, (sbyte)(ctx.regs.a == 0 ? 1 : 0), -1, 0, (sbyte)fc);
    }

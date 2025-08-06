@@ -77,7 +77,7 @@ public static class CPU
 
    public static bool CPU_Step()
    {
-      if (!_context.halted && Emulator.GetContext().Ticks < 1600000)
+      if (!_context.halted)
       {
          UInt16 pc = _context.regs.pc;
 
@@ -130,7 +130,7 @@ public static class CPU
 
       if (_context.enablingIme)
       {
-         _context.enablingIme = true;
+         _context.intMasterEnabled = true;
       }
 
       return true;
