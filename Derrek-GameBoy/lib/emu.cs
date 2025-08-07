@@ -99,6 +99,7 @@ public static class Emulator
       {
          Thread.Sleep(1);
          UI.UIHandleEvents();
+         UI.UIUpdate();
       }
 
       _context.Running = false;

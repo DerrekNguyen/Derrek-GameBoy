@@ -25,8 +25,7 @@ public static class Bus
       else if (address < 0xA000)
       {
          // Char/map data
-         // TODO
-         Common.NO_IMPL();
+         return PPU.VRamRead(address);
       }
       else if (address < 0xC000)
       {
@@ -46,10 +45,7 @@ public static class Bus
       else if (address < 0xFEA0)
       {
          // 0AM
-         // TODO
-         Console.WriteLine($"UNSUPPORTED BusRead({address:X4})");
-         Common.NO_IMPL();
-         return 0x0;
+         return PPU.OAMRead(address);
       }
       else if (address < 0xFF00)
       {
@@ -82,9 +78,7 @@ public static class Bus
       else if (address < 0xA000)
       {
          // Char/map data
-         // TODO
-         Console.WriteLine($"UNSUPPORTED BusWrite({address:X4})");
-         //Common.NO_IMPL();
+         PPU.VRamWrite(address, value);
       }
       else if (address < 0xC000)
       {
@@ -103,9 +97,7 @@ public static class Bus
       else if (address < 0xFEA0)
       {
          // OAM
-         //TODO
-         Console.WriteLine($"UNSUPPORTED BusWrite({address:X4})");
-         //Common.NO_IMPL();
+         PPU.OAMWrite(address, value);
       }
       else if (address < 0xFF00)
       {
