@@ -123,13 +123,15 @@ public static class Emulator
    /// <param name="emu_cycles">number of CPU cycles</param>
    public static void EmuCycle(int CPUCycles) 
    {
-      //TODO
-      int n = CPUCycles * 4;
-
-      for (int i = 0; i < n; i++)
+      for (int i = 0; i < CPUCycles; i++)
       {
-         _context.Ticks++;
-         Timer.Tick();
+         for (int n = 0; n < 4; ++n)
+         {
+            _context.Ticks++;
+            Timer.Tick();
+         }
+
+         DMA.Tick();
       }
    }
 }

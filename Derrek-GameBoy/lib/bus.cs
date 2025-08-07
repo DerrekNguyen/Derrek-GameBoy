@@ -45,6 +45,10 @@ public static class Bus
       else if (address < 0xFEA0)
       {
          // 0AM
+         if (DMA.Transferring())
+         {
+            return 0xFF;
+         }
          return PPU.OAMRead(address);
       }
       else if (address < 0xFF00)
@@ -55,13 +59,11 @@ public static class Bus
       else if (address < 0xFF80)
       {
          // I/O registers
-         // TODO
          return IO.IORead(address);
       }
       else if (address == 0xFFFF)
       {
          // CPU Enable register
-         // TODO
          return CPU._context.ieRegister;
       }
 
@@ -97,6 +99,10 @@ public static class Bus
       else if (address < 0xFEA0)
       {
          // OAM
+         if (DMA.Transferring())
+         {
+            return;
+         }
          PPU.OAMWrite(address, value);
       }
       else if (address < 0xFF00)
@@ -106,13 +112,11 @@ public static class Bus
       else if (address < 0xFF80)
       {
          // I/O Registers
-         // TODO
          IO.IOWrite(address, value);
       }
       else if (address == 0xFFFF)
       {
          // CPU SET ENABLE REGISTER
-         // TODO
          CPU._context.ieRegister = value;
       }
       else

@@ -8,6 +8,8 @@ public static class IO
 {
    private static byte[] SerialData = new byte[2];
 
+   private static byte ly = 0;
+
    public static byte IORead(UInt16 address)
    {
       if (address == 0xFF01)
@@ -25,8 +27,12 @@ public static class IO
       else if (address == 0xFF0F) {
          return CPU._context.intFlags;
       }
+      else if (address == 0xFF44)
+      {
+         return ly++;
+      }
 
-      Console.WriteLine($"UNSUPPORTED BusRead({address:X4})");
+         Console.WriteLine($"UNSUPPORTED BusRead({address:X4})");
       return 0;
    }
 
@@ -52,8 +58,13 @@ public static class IO
          CPU._context.intFlags = value;
          return;
       }
+      else if (address == 0xFF46)
+      {
+         DMA.Start(value);
+         Console.WriteLine("DMA START");
+      }
 
-      Console.WriteLine($"UNSUPPORTED BusRead({address:X4})");
+      Console.WriteLine($"UNSUPPORTED BusWrite({address:X4})");
    }
 }
 
