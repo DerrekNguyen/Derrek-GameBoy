@@ -27,12 +27,12 @@ public static class IO
       else if (address == 0xFF0F) {
          return CPU._context.intFlags;
       }
-      else if (address == 0xFF44)
+      else if (Common.BETWEEN(address, 0xFF40, 0xFF4B))
       {
-         return ly++;
+         return LCD.Read(address);
       }
 
-         Console.WriteLine($"UNSUPPORTED BusRead({address:X4})");
+      Console.WriteLine($"UNSUPPORTED BusRead({address:X4})");
       return 0;
    }
 
@@ -58,10 +58,9 @@ public static class IO
          CPU._context.intFlags = value;
          return;
       }
-      else if (address == 0xFF46)
+      else if (Common.BETWEEN(address, 0xFF40, 0xFF4B))
       {
-         DMA.Start(value);
-         Console.WriteLine("DMA START");
+         LCD.Write(address, value);
       }
 
       Console.WriteLine($"UNSUPPORTED BusWrite({address:X4})");

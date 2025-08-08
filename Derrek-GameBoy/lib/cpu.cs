@@ -85,28 +85,28 @@ public static class CPU
          Emulator.EmuCycle(1);
          CPUFetch.Fetch_Data(_context);
 
-         string flags = string.Format("{0}{1}{2}{3}",
-             (_context.regs.f & (1 << 7)) != 0 ? 'Z' : '-',
-             (_context.regs.f & (1 << 6)) != 0 ? 'N' : '-',
-             (_context.regs.f & (1 << 5)) != 0 ? 'H' : '-',
-             (_context.regs.f & (1 << 4)) != 0 ? 'C' : '-'
-         );
+         //string flags = string.Format("{0}{1}{2}{3}",
+         //    (_context.regs.f & (1 << 7)) != 0 ? 'Z' : '-',
+         //    (_context.regs.f & (1 << 6)) != 0 ? 'N' : '-',
+         //    (_context.regs.f & (1 << 5)) != 0 ? 'H' : '-',
+         //    (_context.regs.f & (1 << 4)) != 0 ? 'C' : '-'
+         //);
 
-         string inst;
-         InstLookUp.InstToStr(ref _context, out inst);
+         //string inst;
+         //InstLookUp.InstToStr(ref _context, out inst);
 
-         Console.WriteLine($"{Emulator.GetContext().Ticks:X8} - " +
-            $"{pc:X4}: {inst,-12} " +
-            $"({_context.curOpcode:X2} {Bus.BusRead((ushort)(pc + 1)):X2} {Bus.BusRead((ushort)(pc + 2)):X2}) " +
-            $"A: {_context.regs.a:X2} F: {flags} " +
-            $" BC: {_context.regs.b:X2}{_context.regs.c:X2} " +
-            $"DE: {_context.regs.d:X2}{_context.regs.e:X2} HL: {_context.regs.h:X2}{_context.regs.l:X2} Data: {_context.fetchedData:X8}");
+         //Console.WriteLine($"{Emulator.GetContext().Ticks:X8} - " +
+         //   $"{pc:X4}: {inst,-12} " +
+         //   $"({_context.curOpcode:X2} {Bus.BusRead((ushort)(pc + 1)):X2} {Bus.BusRead((ushort)(pc + 2)):X2}) " +
+         //   $"A: {_context.regs.a:X2} F: {flags} " +
+         //   $" BC: {_context.regs.b:X2}{_context.regs.c:X2} " +
+         //   $"DE: {_context.regs.d:X2}{_context.regs.e:X2} HL: {_context.regs.h:X2}{_context.regs.l:X2} Data: {_context.fetchedData:X8}");
 
-         if (_context.CurrInst == null)
-         {
-            Console.WriteLine($"Unknown Instruction: {_context.curOpcode:X2}");
-            Environment.Exit(-7);
-         }
+         //if (_context.CurrInst == null)
+         //{
+         //   Console.WriteLine($"Unknown Instruction: {_context.curOpcode:X2}");
+         //   Environment.Exit(-7);
+         //}
 
          DBG.Update();
          DBG.Print();
