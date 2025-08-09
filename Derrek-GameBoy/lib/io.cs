@@ -32,7 +32,7 @@ public static class IO
          return LCD.Read(address);
       }
 
-      Console.WriteLine($"UNSUPPORTED BusRead({address:X4})");
+      //Console.WriteLine($"UNSUPPORTED BusRead({address:X4})");
       return 0;
    }
 
@@ -63,7 +63,7 @@ public static class IO
          LCD.Write(address, value);
       }
 
-      Console.WriteLine($"UNSUPPORTED BusWrite({address:X4})");
+      //Console.WriteLine($"UNSUPPORTED BusWrite({address:X4})");
    }
 }
 

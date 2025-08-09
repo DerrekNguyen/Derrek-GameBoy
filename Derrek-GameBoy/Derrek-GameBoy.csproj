@@ -19,8 +19,4 @@
     <PackageReference Include="SDL2-CS" Version="2.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="roms\" />
-  </ItemGroup>
-
 </Project>

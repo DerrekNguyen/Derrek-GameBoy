@@ -49,7 +49,7 @@ public class OAMEntry
    }
    public byte[] GetBytes()
    {
-      return new byte[] { y, x, tile, flags };
+      return [y, x, tile, flags];
    }
 
    public void SetBytes(byte[] data)
@@ -76,6 +76,10 @@ public class PPUContext
    public OAMEntry[] OAMRam = new OAMEntry[40];
    public byte[] Vram = new byte[0x2000];
 
+   public UInt32 CurrentFrame;
+   public UInt32 LineTicks;
+   public UInt32[]? VideoBuffer;
+
    public PPUContext()
    {
       for (int i = 0; i < 40; i++)
@@ -89,14 +93,40 @@ public static class PPU
 {
    public static PPUContext _context = new();
 
+   public const int LINES_PER_FRAME = 154;
+   public const int TICKS_PER_LINE = 456;
+   public const int YRES = 144;
+   public const int XRES = 160;
+
    public static void Init()
    {
+      _context.CurrentFrame = 0;
+      _context.LineTicks = 0;
+      _context.VideoBuffer = new UInt32[160 * 144];
 
+      LCD.Init();
+      LCD.LCDS_MODE_SET((byte)LCDMode.MODE_OAM);
    }
 
    public static void Tick()
    {
+      _context.LineTicks++;
 
+      switch (LCD.LCDS_MODE())
+      {
+         case LCDMode.MODE_OAM:
+            PPUSM.PPUModeOAM();
+            break;
+         case LCDMode.MODE_XFER:
+            PPUSM.PPUModeXFER();
+            break;
+         case LCDMode.MODE_VBLANK:
+            PPUSM.PPUModeVBLANK();
+            break;
+         case LCDMode.MODE_HBLANK:
+            PPUSM.PPUModeHBLANK();
+            break;
+      }
    }
 
    public static void OAMWrite(UInt16 address, byte value)

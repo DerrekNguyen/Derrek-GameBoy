@@ -1,8 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Runtime.InteropServices;
-using System.Threading;
 using SDL2;
 
 public class EmuContext
@@ -32,13 +28,14 @@ public static class Emulator
 
    public static void Delay(uint ms)
    {
-      System.Threading.Thread.Sleep((int)ms);
+      SDL2.SDL.SDL_Delay(ms);
    }
 
    public static void CPURun()
    {
       Timer.Init();
       CPU.Init();
+      PPU.Init();
 
       _context.Paused = false;
       _context.Running = true;
@@ -95,11 +92,19 @@ public static class Emulator
          Console.WriteLine("Unexpected error starting thread: " + ex.Message);
       }
 
+      UInt32 prevFrame = 0;
+
       while (!_context.Die)
       {
          Thread.Sleep(1);
          UI.UIHandleEvents();
-         UI.UIUpdate();
+
+         if (prevFrame != PPU._context.CurrentFrame)
+         {
+            UI.UIUpdate();
+         }
+
+         prevFrame = PPU._context.CurrentFrame;
       }
 
       _context.Running = false;
@@ -114,7 +119,7 @@ public static class Emulator
       SDL2.SDL_ttf.TTF_Quit();
       SDL2.SDL.SDL_Quit();
 
-      return 1;
+      return 0;
    }
 
    /// <summary>
@@ -129,6 +134,7 @@ public static class Emulator
          {
             _context.Ticks++;
             Timer.Tick();
+            PPU.Tick();
          }
 
          DMA.Tick();

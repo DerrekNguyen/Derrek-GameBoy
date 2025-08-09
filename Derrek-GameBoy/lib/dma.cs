@@ -32,16 +32,10 @@ public static class DMA
          return;
       }
 
-      PPU.OAMWrite(_context.curByte, Bus.BusRead((ushort)((_context.value * 100) + _context.curByte)));
+      PPU.OAMWrite(_context.curByte, Bus.BusRead((ushort)((_context.value * 0x100) + _context.curByte)));
    
       _context.curByte++;
-      _context.active = (_context.curByte < 0xA0) ? true : false;
-
-      if (!_context.active)
-      {
-         Console.WriteLine("DMA Done");
-         Thread.Sleep(2);
-      }
+      _context.active = (_context.curByte < 0xA0);
    }
 
    public static bool Transferring()

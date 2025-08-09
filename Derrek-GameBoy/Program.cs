@@ -10,7 +10,7 @@ class Program
    }
    static void Main()
    {
-      String[] args = [GetRomPath("01-special.gb")];
+      String[] args = [GetRomPath("drm.gb")];
       Emulator.EmuRun(args);
    }
 }

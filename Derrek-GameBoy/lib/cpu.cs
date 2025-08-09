@@ -108,6 +108,7 @@ public static class CPU
          //   Environment.Exit(-7);
          //}
 
+         //Console.WriteLine($"Line Tick: {PPU._context.LineTicks} LCDS Mode: {(int)LCD.LCDS_MODE()}");
          DBG.Update();
          DBG.Print();
 

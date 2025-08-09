@@ -56,7 +56,7 @@ public static class LCD
 
    public static int LCDC_OBJ_HEIGHT()
    {
-      return Common.BIT(_context.lcdc, 1) ? 16 : 8;
+      return Common.BIT(_context.lcdc, 2) ? 16 : 8;
    }
 
    public static int LCDC_BG_MAP_AREA()

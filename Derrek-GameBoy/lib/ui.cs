@@ -54,6 +54,11 @@ public static class UI
 
    private static ulong[] tileColors = {0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000};
 
+   public static UInt32 GetTicks()
+   {
+      return SDL2.SDL.SDL_GetTicks();
+   }
+
    public static void DisplayTile(
       nint surface, 
       UInt16 startLocation, 
@@ -84,59 +89,6 @@ public static class UI
          }
       }
    }
-
-   //private static void UpdateDebugWindow()
-   //{
-   //   int xDraw = 0;
-   //   int yDraw = 0;
-   //   int tileNum = 0;
-
-   //   uint format;
-   //   int access, w, h;
-
-   //   int result = SDL.SDL_QueryTexture(
-   //      debugScreen,
-   //      out format,
-   //      out access,
-   //      out w,
-   //      out h);
-
-   //   SDL2.SDL.SDL_Rect rc;
-   //   rc.x = 0;
-   //   rc.y = 0;
-   //   rc.w = w;
-   //   rc.h = h;
-
-   //   UInt16 addr = 0x8000;
-
-   //   // 384 tiles, 24 x 16
-
-   //   for (int y = 0; y < 24; y++)
-   //   {
-   //      for (int x = 0; x < 16; x++)
-   //      {
-   //         DisplayTile(debugScreen, addr, (ushort)tileNum, xDraw + (x * scale), yDraw + (y * scale));
-   //         xDraw += (8 * scale);
-   //         tileNum++;
-   //      }
-
-   //      yDraw += (8 * scale);
-   //      xDraw = 0;
-   //   }
-
-   //   IntPtr pixels;
-   //   int pitch;
-   //   result = SDL.SDL_LockTexture(
-   //      debugScreen,
-   //      IntPtr.Zero,
-   //      out pixels,
-   //      out pitch);
-
-   //   SDL2.SDL.SDL_UpdateTexture(sdlDebugTexture, 0, pixels, pitch);
-   //   SDL2.SDL.SDL_RenderClear(sdlDebugRenderer);
-   //   SDL2.SDL.SDL_RenderCopy(sdlDebugRenderer, sdlDebugTexture, 0, 0);
-   //   SDL2.SDL.SDL_RenderPresent(sdlDebugRenderer);
-   //}
 
    private static void UpdateDebugWindow()
    {
