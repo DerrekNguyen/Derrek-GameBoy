@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.ApplicationInsights.Metrics.Extensibility;
+using System;
 
 public static class PPUSM
 {
@@ -31,14 +32,28 @@ public static class PPUSM
       if (PPU._context.LineTicks >= 80)
       {
          LCD.LCDS_MODE_SET((byte)LCDMode.MODE_XFER);
+
+         PPU._context.Pfc.CurFetchState = FetchState.FS_TILE;
+         PPU._context.Pfc.LineX = 0;
+         PPU._context.Pfc.FetchX = 0;
+         PPU._context.Pfc.PushedX = 0;
+         PPU._context.Pfc.FIFOX = 0;
       }
    }
 
    public static void PPUModeXFER()
    {
-      if (PPU._context.LineTicks >= 80 + 172)
+      Pipeline.Process();
+
+      if (PPU._context.Pfc.PushedX >= PPU.XRES)
       {
+         Pipeline.FIFOReset();
          LCD.LCDS_MODE_SET((byte)LCDMode.MODE_HBLANK);
+
+         if (LCD.LCDS_STAT_INT(StatSrc.SS_HBLANK) != 0)
+         {
+            CPU.RequestInterrupt(InterruptType.IT_LCD_STAT);
+         }
       }
    }
 

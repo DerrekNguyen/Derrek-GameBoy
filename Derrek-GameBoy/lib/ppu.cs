@@ -1,4 +1,5 @@
 using Newtonsoft.Json.Linq;
+using NUnit.Framework.Constraints;
 using System;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -62,6 +63,56 @@ public class OAMEntry
    }
 }
 
+public enum FetchState
+{
+   FS_TILE,
+   FS_DATA0,
+   FS_DATA1,
+   FS_IDLE,
+   FS_PUSH
+}
+
+public class FIFOEntry
+{
+   public FIFOEntry? next;
+   public UInt32 data;
+
+   public FIFOEntry(UInt32 value)
+   {
+      data = value;
+      next = null;
+   }
+}
+
+public class FIFO
+{
+   public FIFOEntry? head;
+   public FIFOEntry? tail;
+   public UInt32 size;
+
+   public FIFO()
+   {
+      head = null;
+      tail = null;
+      size = 0;
+   }
+}
+
+public class PixelFIFOContext
+{
+   public FetchState CurFetchState;
+   public FIFO PixelFIFO = new FIFO();
+   public byte LineX;
+   public byte PushedX;
+   public byte FetchX;
+   public byte[] BGWFetchData = new byte[3];
+   public byte[] FetchEntryData = new byte[6];
+   public byte MapY;
+   public byte MapX;
+   public byte TileY;
+   public byte FIFOX;
+}
+
 /*
  Bit7   BG and Window over OBJ (0=No, 1=BG and Window colors 1-3 over the OBJ)
  Bit6   Y flip          (0=Normal, 1=Vertically mirrored)
@@ -75,6 +126,8 @@ public class PPUContext
 {
    public OAMEntry[] OAMRam = new OAMEntry[40];
    public byte[] Vram = new byte[0x2000];
+
+   public PixelFIFOContext Pfc;
 
    public UInt32 CurrentFrame;
    public UInt32 LineTicks;
@@ -103,6 +156,11 @@ public static class PPU
       _context.CurrentFrame = 0;
       _context.LineTicks = 0;
       _context.VideoBuffer = new UInt32[160 * 144];
+
+      _context.Pfc.LineX = 0;
+      _context.Pfc.PushedX = 0;
+      _context.Pfc.FetchX = 0;
+      _context.Pfc.PixelFIFO.size = 0;
 
       LCD.Init();
       LCD.LCDS_MODE_SET((byte)LCDMode.MODE_OAM);
