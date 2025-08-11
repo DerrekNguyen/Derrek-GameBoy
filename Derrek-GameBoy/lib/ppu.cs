@@ -127,7 +127,7 @@ public class PPUContext
    public OAMEntry[] OAMRam = new OAMEntry[40];
    public byte[] Vram = new byte[0x2000];
 
-   public PixelFIFOContext Pfc;
+   public PixelFIFOContext Pfc = new PixelFIFOContext();
 
    public UInt32 CurrentFrame;
    public UInt32 LineTicks;

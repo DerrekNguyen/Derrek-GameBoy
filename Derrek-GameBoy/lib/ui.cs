@@ -2,6 +2,7 @@
 using System;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 public static class UI
 {
@@ -19,6 +20,7 @@ public static class UI
    public static IntPtr debugScreen;
 
    private static int scale = 4;
+   private static int scaleMain = 20;
 
    public static void UIInit()
    {
@@ -27,6 +29,17 @@ public static class UI
 
       SDL2.SDL.SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, 0, out sdlWindow, out sdlRenderer);
 
+      screen = SDL2.SDL.SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32,
+                                             0xFF000000,
+                                             0x00FF0000,
+                                             0x0000FF00,
+                                             0x000000FF);
+
+      sdlTexture = SDL2.SDL.SDL_CreateTexture(sdlRenderer,
+                                              SDL2.SDL.SDL_PIXELFORMAT_ARGB8888,
+                                              (int)SDL2.SDL.SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING,
+                                              SCREEN_WIDTH, SCREEN_HEIGHT);
+      
       SDL2.SDL.SDL_CreateWindowAndRenderer(16 * 8 * scale, 32 * 8 * scale, 0, out sdlDebugWindow, out sdlDebugRenderer);
 
       debugScreen = SDL2.SDL.SDL_CreateRGBSurface(
@@ -110,16 +123,86 @@ public static class UI
          xDraw = 0;
       }
 
-      // Blit the surface to the screen and update the window
       SDL2.SDL.SDL_BlitSurface(debugScreen, IntPtr.Zero, SDL2.SDL.SDL_GetWindowSurface(sdlDebugWindow), IntPtr.Zero);
       SDL2.SDL.SDL_UpdateWindowSurface(sdlDebugWindow);
    }
 
 
+   //public static void UIUpdate()
+   //{
+   //   SDL2.SDL.SDL_Rect rc;
+   //   rc.x = rc.y = 0;
+   //   rc.w = rc.h = 2048;
+
+   //   UInt32[] VideoBuffer = PPU._context.VideoBuffer;
+
+   //   for (int lineNum = 0; lineNum < PPU.YRES; lineNum++)
+   //   {
+   //      for (int x = 0; x < PPU.XRES; x++)
+   //      {
+   //         rc.x = x * scale;
+   //         rc.y = lineNum * scale;
+   //         rc.w = scale;
+   //         rc.h = scale;
+
+   //         SDL2.SDL.SDL_FillRect(screen, ref rc, VideoBuffer[x + (lineNum * PPU.XRES)]);
+   //      }
+   //   }
+
+   //   SDL.SDL_Surface s = Marshal.PtrToStructure<SDL.SDL_Surface>(screen);
+   //   SDL2.SDL.SDL_UpdateTexture(sdlTexture, IntPtr.Zero, s.pixels, s.pitch);
+   //   SDL2.SDL.SDL_RenderClear(sdlRenderer);
+   //   SDL2.SDL.SDL_RenderCopy(sdlRenderer, sdlTexture, IntPtr.Zero, IntPtr.Zero);
+   //   SDL2.SDL.SDL_RenderPresent(sdlRenderer);
+
+   //   UpdateDebugWindow();
+   //}
+
    public static void UIUpdate()
    {
+      // Lock the texture so we can write directly to its pixel buffer
+      IntPtr pixels;
+      int pitch;
+      SDL.SDL_LockTexture(sdlTexture, IntPtr.Zero, out pixels, out pitch);
+
+      // Copy video buffer to the locked texture memory
+      unsafe
+      {
+         // PPU._context.VideoBuffer must already be in the right SDL pixel format
+         fixed (uint* src = PPU._context.VideoBuffer)
+         {
+            byte* dst = (byte*)pixels;
+            for (int y = 0; y < PPU.YRES; y++)
+            {
+               // Copy one row of pixels
+               Buffer.MemoryCopy(
+                   src + (y * PPU.XRES),
+                   dst + (y * pitch),
+                   pitch,
+                   PPU.XRES * sizeof(uint)
+               );
+            }
+         }
+      }
+
+      // Unlock texture
+      SDL.SDL_UnlockTexture(sdlTexture);
+
+      // Render
+      SDL.SDL_RenderClear(sdlRenderer);
+      SDL.SDL_Rect destRect = new SDL.SDL_Rect
+      {
+         x = 0,
+         y = 0,
+         w = PPU.XRES * scaleMain,
+         h = PPU.YRES * scaleMain
+      };
+      SDL.SDL_RenderCopy(sdlRenderer, sdlTexture, IntPtr.Zero, ref destRect);
+      SDL.SDL_RenderPresent(sdlRenderer);
+
       UpdateDebugWindow();
    }
+
 
    public static void UIHandleEvents()
    {
