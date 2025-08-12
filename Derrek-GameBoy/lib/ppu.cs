@@ -122,10 +122,23 @@ public class PixelFIFOContext
  Bit2-0 Palette number  **CGB Mode Only**     (OBP0-7)
  */
 
+public class OAMLineEntry
+{
+   public OAMEntry? entry;
+   public OAMLineEntry? next;
+}
+
 public class PPUContext
 {
    public OAMEntry[] OAMRam = new OAMEntry[40];
    public byte[] Vram = new byte[0x2000];
+
+   public byte LineSpriteCount;
+   public OAMLineEntry? LineSprites;
+   public OAMLineEntry[] LineEntryArray = new OAMLineEntry[10];
+
+   public byte FetchedEntryCount;
+   public OAMEntry[] FetchedEntries = new OAMEntry[3];
 
    public PixelFIFOContext Pfc = new PixelFIFOContext();
 
@@ -161,6 +174,9 @@ public static class PPU
       _context.Pfc.PushedX = 0;
       _context.Pfc.FetchX = 0;
       _context.Pfc.PixelFIFO.size = 0;
+
+      _context.LineSprites = null;
+      _context.FetchedEntryCount = 0;
 
       LCD.Init();
       LCD.LCDS_MODE_SET((byte)LCDMode.MODE_OAM);

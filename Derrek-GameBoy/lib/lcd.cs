@@ -210,7 +210,7 @@ public static class LCD
       }
       else if (address == 0xFF49)
       {
-         UpdatePalette((byte)(value & 0b11111100), 1);
+         UpdatePalette((byte)(value & 0b11111100), 2);
       }
    }
 }

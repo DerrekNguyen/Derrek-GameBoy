@@ -27,6 +27,79 @@ public static class PPUSM
       }
    }
 
+   private static void LoadLineSprites()
+   {
+      int curY = LCD._context.ly;
+
+      byte spriteHeight = (byte)LCD.LCDC_OBJ_HEIGHT();
+      for (int i = 0; i < PPU._context.LineEntryArray.Length; i++)
+      {
+         if (PPU._context.LineEntryArray[i] == null)
+            PPU._context.LineEntryArray[i] = new OAMLineEntry();
+         PPU._context.LineEntryArray[i].entry = null;
+         PPU._context.LineEntryArray[i].next = null;
+      }
+
+      for (int i = 0; i < 40; ++i)
+      {
+         OAMEntry e = PPU._context.OAMRam[i];
+
+         if (e.x == 0)
+         {
+            // x = 0 means not visible
+            continue;
+         }
+
+         if (PPU._context.LineSpriteCount >= 10)
+         {
+            // max 10 sprites per line
+            break;
+         }
+
+         if (e.y <= curY + 16 && e.y + spriteHeight > curY + 16)
+         {
+            // this sprite is on the current line
+            OAMLineEntry entry = PPU._context.LineEntryArray[
+               PPU._context.LineSpriteCount++
+            ];
+
+            entry.entry = e;
+            entry.next = null;
+
+            if (PPU._context.LineSprites == null || PPU._context.LineSprites.entry.x > e.x)
+            {
+               entry.next = PPU._context.LineSprites;
+               PPU._context.LineSprites = entry;
+               continue;
+            }
+
+            // Do some sorting
+
+            OAMLineEntry le = PPU._context.LineSprites;
+            OAMLineEntry prev = le;
+
+            while (le != null)
+            {
+               if (le.entry.x > e.x)
+               {
+                  prev.next = entry;
+                  entry.next = le;
+                  break;
+               }
+
+               if (le.next == null)
+               {
+                  le.next = entry;
+                  break;
+               }
+
+               prev = le;
+               le = le.next;
+            }
+         }
+      }
+   }
+
    public static void PPUModeOAM()
    {
       if (PPU._context.LineTicks >= 80)
@@ -38,6 +111,15 @@ public static class PPUSM
          PPU._context.Pfc.FetchX = 0;
          PPU._context.Pfc.PushedX = 0;
          PPU._context.Pfc.FIFOX = 0;
+      }
+
+      if (PPU._context.LineTicks == 1)
+      {
+         // Read OAM on the first tick only
+         PPU._context.LineSprites = null;
+         PPU._context.LineSpriteCount = 0;
+
+         PPUSM.LoadLineSprites();
       }
    }
 
