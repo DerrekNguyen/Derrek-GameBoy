@@ -139,6 +139,7 @@ public class PPUContext
 
    public byte FetchedEntryCount;
    public OAMEntry[] FetchedEntries = new OAMEntry[3];
+   public byte WindowLine;
 
    public PixelFIFOContext Pfc = new PixelFIFOContext();
 
@@ -177,6 +178,7 @@ public static class PPU
 
       _context.LineSprites = null;
       _context.FetchedEntryCount = 0;
+      _context.WindowLine = 0;
 
       LCD.Init();
       LCD.LCDS_MODE_SET((byte)LCDMode.MODE_OAM);

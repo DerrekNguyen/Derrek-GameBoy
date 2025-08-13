@@ -203,15 +203,52 @@ public static class UI
       UpdateDebugWindow();
    }
 
+   public static void OnKey(bool down, UInt32 keyCode)
+   {
+      //TODO: Handle up/down
+      switch (keyCode)
+      {
+         case (uint)SDL2.SDL.SDL_Keycode.SDLK_z:
+            GamePad._context.controller.b = down;
+            break;
+         case (uint)SDL2.SDL.SDL_Keycode.SDLK_x:
+            GamePad._context.controller.a = down;
+            break;
+         case (uint)SDL2.SDL.SDL_Keycode.SDLK_RETURN:
+            GamePad._context.controller.start = down;
+            break;
+         case (uint)SDL2.SDL.SDL_Keycode.SDLK_TAB:
+            GamePad._context.controller.select = down;
+            break;
+         case (uint)SDL2.SDL.SDL_Keycode.SDLK_UP:
+            GamePad._context.controller.up = down;
+            break;
+         case (uint)SDL2.SDL.SDL_Keycode.SDLK_DOWN:
+            GamePad._context.controller.down = down;
+            break;
+         case (uint)SDL2.SDL.SDL_Keycode.SDLK_LEFT:
+            GamePad._context.controller.left = down;
+            break;
+         case (uint)SDL2.SDL.SDL_Keycode.SDLK_RIGHT:
+            GamePad._context.controller.right = down;
+            break;
+      }
+   }
 
    public static void UIHandleEvents()
    {
       SDL2.SDL.SDL_Event e;
       while (SDL2.SDL.SDL_PollEvent(out e) > 0)
       {
-         //TODO: SDL2.SDL.SDL_UpdateWindowSurface(sdlWindow);
-         //TODO: SDL2.SDL.SDL_UpdateWindowSurface(sdlTraceWindow);
-         //TODO: SDL2.SDL.SDL_UpdateWindowSurface(sdlDebugWindow);
+         if (e.type == SDL2.SDL.SDL_EventType.SDL_KEYDOWN)
+         {
+            UI.OnKey(true, (uint)e.key.keysym.sym);
+         }
+
+         if (e.type == SDL2.SDL.SDL_EventType.SDL_KEYUP)
+         {
+            UI.OnKey(false, (uint)e.key.keysym.sym);
+         }
 
          if (e.type == SDL2.SDL.SDL_EventType.SDL_WINDOWEVENT)
          {

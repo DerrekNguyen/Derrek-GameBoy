@@ -185,6 +185,35 @@ public static class Pipeline
             Bus.BusRead((ushort)(0x8000 + (tileIndex * 16) + ty + offset));
       }
    }
+
+   private static void LoadWindowTile()
+   {
+      if (!PPUSM.windowVisible())
+      {
+         return;
+      }
+
+      byte windowY = LCD._context.winY;
+
+      if (PPU._context.Pfc.FetchX + 7 >= LCD._context.winX &&
+         PPU._context.Pfc.FetchX + 7 < LCD._context.winX + PPU.YRES + 14)
+      {
+         if (LCD._context.ly >= windowY &&
+            LCD._context.ly < windowY + PPU.XRES)
+         {
+            byte wTileY = (byte)(PPU._context.WindowLine / 8);
+
+            PPU._context.Pfc.BGWFetchData[0] = Bus.BusRead((ushort)((LCD.LCDC_WIN_MAP_AREA() +
+               (PPU._context.Pfc.FetchX + 7 - LCD._context.winX) / 8) + (wTileY * 32)));
+
+            if (LCD.LCDC_BGW_DATA_AREA() == 0x8800)
+            {
+               PPU._context.Pfc.BGWFetchData[0] += 128;
+            }
+         }
+      }
+   }
+
    public static void Fetch()
    {
       switch(PPU._context.Pfc.CurFetchState)
@@ -203,6 +232,8 @@ public static class Pipeline
                {
                   PPU._context.Pfc.BGWFetchData[0] += 128;
                }
+
+               Pipeline.LoadWindowTile();
             }
 
             if (LCD.LCDC_OBJ_ENABLE() && PPU._context.LineSprites != null)

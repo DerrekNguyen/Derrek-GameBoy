@@ -8,8 +8,22 @@ public static class PPUSM
    private static long StartTimer = 0;
    private static long FrameCount = 0;
 
+   public static bool windowVisible()
+   {
+      return (LCD.LCDC_WIN_ENABLE() && LCD._context.winX >= 0 &&
+         LCD._context.winX <= 166 && LCD._context.winY >= 0 &&
+         LCD._context.winY < PPU.YRES);
+   }
+
    private static void IncrementLy()
    {
+      if (PPUSM.windowVisible() && 
+         LCD._context.ly >= LCD._context.winY &&
+         LCD._context.ly < LCD._context.winY + PPU.YRES)
+      {
+         PPU._context.WindowLine++;
+      }
+
       LCD._context.ly++;
 
       if (LCD._context.ly == LCD._context.lyCompare)
@@ -149,6 +163,7 @@ public static class PPUSM
          {
             LCD.LCDS_MODE_SET((byte)LCDMode.MODE_OAM);
             LCD._context.ly = 0;
+            PPU._context.WindowLine = 0;
          }
 
          PPU._context.LineTicks = 0;

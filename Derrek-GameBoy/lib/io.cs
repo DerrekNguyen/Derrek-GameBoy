@@ -12,6 +12,10 @@ public static class IO
 
    public static byte IORead(UInt16 address)
    {
+      if (address == 0xFF00)
+      {
+         return GamePad.GetOutput();
+      }
       if (address == 0xFF01)
       {
          return SerialData[0];
@@ -38,6 +42,11 @@ public static class IO
 
    public static void IOWrite(UInt16 address, byte value)
    {
+      if (address == 0xFF00)
+      {
+         GamePad.SetSel(value);
+         return;
+      }
       if (address == 0xFF01)
       {
          SerialData[0] = value;
