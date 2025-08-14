@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -24,10 +25,27 @@ public unsafe struct RomHeader
 
 public class CartContext
 {
-   public string Filename { get; set; } = string.Empty;
-   public UInt32 RomSize { get; set; }
-   public Byte[] RomData { get; set; } = Array.Empty<Byte>();
-   public RomHeader? Header { get; set; }
+   public string Filename = string.Empty;
+   public UInt32 RomSize;
+   public Byte[] RomData = Array.Empty<Byte>();
+   public RomHeader? Header;
+
+   // mbc1 related data
+   public bool RamEnabled;
+   public bool RamBanking;
+
+   public int RomBankXOffset;
+   public byte BankingMode;
+
+   public byte RomBankValue;
+   public byte RamBankValue;
+
+   public byte[]? RamBank; // Current selected ram bank
+   public byte[][] RamBanks = new byte[16][]; // All ram banks
+
+   // For battery
+   public bool Battery; // Has battery
+   public bool NeedSave; // Should save battery backup
 }
 
 public static class Cart
@@ -78,6 +96,48 @@ public static class Cart
       return "UNKNOWN";
    }
 
+   public static bool CartNeedSave()
+   {
+      return _cartContext.NeedSave;
+   }
+
+   public static bool CartMBC1()
+   {
+      if (_cartContext.Header is RomHeader header)
+      {
+         return Common.BETWEEN(header.Type, 1, 3);
+      }
+      return false;
+   }
+
+   public static bool CartBattery()
+   {
+      // mbc1 only for now
+      return _cartContext.Battery;
+   }
+
+   public static void CartSetupBanking()
+   {
+      if (_cartContext.Header is RomHeader header)
+      {
+         for (int i = 0; i < 16; i++)
+         {
+            _cartContext.RamBanks[i] = null;
+
+            if ((header.RamSize == 2 && i == 0) ||
+                (header.RamSize == 3 && i < 4) ||
+                (header.RamSize == 4 && i < 16) ||
+                (header.RamSize == 5 && i < 8))
+            {
+               _cartContext.RamBanks[i] = new byte[0x2000];
+            }
+         }
+
+         _cartContext.RamBank = _cartContext.RamBanks[0];
+         _cartContext.RomBankXOffset = 0x4000; // Rom Bank 1
+      }
+   }
+
    /// <summary>
    /// Loads a cart from the file name.
    /// </summary>
@@ -89,6 +149,8 @@ public static class Cart
       _cartContext.Filename = cart;
       _cartContext.RomData = File.ReadAllBytes(cart);
       _cartContext.RomSize = (uint)_cartContext.RomData.Length;
+      _cartContext.Battery = Cart.CartBattery();
+      _cartContext.NeedSave = false;
 
       // Load title from file
       byte[] titleBytes = new byte[16];
@@ -136,6 +198,8 @@ public static class Cart
       Console.WriteLine($"\t LIC Code : {header.LicenseCode:X2} ({CartLICName()})");
       Console.WriteLine($"\t ROM Vers : {header.Version:X2}");
 
+      Cart.CartSetupBanking();
+
       // Verify the checksum
       UInt16 x = 0;
       for (UInt16 i = 0x0134; i <= 0x014C; ++i)
@@ -145,21 +209,119 @@ public static class Cart
       bool passed = (x & 0xFF) == header.Checksum;
       Console.WriteLine($"\t Checksum : {header.Checksum:X2} ({(passed ? "PASSED" : "FAILED")})");
 
+      if (Cart.CartBattery())
+      {
+         Cart.CartBatteryLoad();
+      }
+
       return true;
+   }
+
+   public static void CartBatteryLoad()
+   {
+
+   }
+
+   public static void CartBatterySave()
+   {
+
    }
 
    public static byte CartRead(UInt16 address)
    {
-      //for now just ROM ONLY type supported...
+      if (address < 0x4000)
+      {
+         return _cartContext.RomData[address];
+      }
 
-      return _cartContext.RomData[address];
+      if (!Cart.CartMBC1())
+      {
+         return 0xFF;
+      }
+
+      if ((address & 0xE000) == 0xA000)
+      {
+         if (!_cartContext.RamEnabled)
+            return 0xFF;
+
+         if (_cartContext.RamBank == null)
+         {
+            return 0xFF;
+         }
+
+         return _cartContext.RamBank[address - 0xA000];
+      }
+          
+      return _cartContext.RomData[address - 0x4000 + _cartContext.RomBankXOffset];
    }
 
    public static void CartWrite(UInt16 address, byte value) 
    {
-      //for now, ROM ONLY...
+      if (!Cart.CartMBC1())
+      {
+         return;
+      }
 
-      Console.WriteLine($"Cart Write: {address:X4}");
-      //Common.NO_IMPL();
+      if (address < 0x2000)
+      {
+         _cartContext.RamEnabled = ((value & 0xF) == 0xA);
+      }
+
+      if ((address & 0xE000) == 0x2000)
+      {
+         // Rom bank number
+         if (value == 0)
+         {
+            value = 1;
+         }
+
+         value &= 0b11111;
+
+         _cartContext.RomBankValue = value;
+         _cartContext.RomBankXOffset = 0x4000 * _cartContext.RomBankValue;
+      }
+
+      if ((address & 0xE000) == 0x4000)
+      {
+         // Ram bank number
+         _cartContext.RamBankValue = (byte)(value & 0b11);
+
+         if (_cartContext.RamBanking)
+         {
+            if (_cartContext.NeedSave)
+            {
+               Cart.CartBatterySave();
+            }
+
+            _cartContext.RamBank = _cartContext.RamBanks[_cartContext.RamBankValue];
+         }
+      }
+
+      if ((address & 0xE000) == 0x6000)
+      {
+         // Banking mode select
+         _cartContext.BankingMode = (byte)(value & 1);
+         _cartContext.RamBanking = _cartContext.BankingMode != 0;
+
+         if (_cartContext.RamBanking)
+         {
+            _cartContext.RamBank = _cartContext.RamBanks[_cartContext.RamBankValue];
+         }
+      }
+
+      if ((address & 0xE000) == 0xA000)
+      {
+         if (!_cartContext.RamEnabled)
+            return;
+         if (_cartContext.RamBank == null)
+            return;
+
+         _cartContext.RamBank[address - 0xA000] = value;
+      }
+
+      if (_cartContext.Battery)
+      {
+         _cartContext.NeedSave = true;
+      }
    }
 }

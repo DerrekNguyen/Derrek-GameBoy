@@ -205,6 +205,11 @@ public static class PPUSM
                FrameCount = 0;
 
                Console.WriteLine($"FPS: {fps}");
+
+               if (Cart.CartNeedSave())
+               {
+                  Cart.CartBatterySave();
+               }
             }
 
             FrameCount++;
