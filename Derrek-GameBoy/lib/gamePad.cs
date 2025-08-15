@@ -55,15 +55,15 @@ public static class GamePad
          {
             output &= 0b11110111;
          }
-         else if (_context.controller.select)
+         if (_context.controller.select)
          {
             output &= 0b11111011;
          }
-         else if (_context.controller.a)
+         if (_context.controller.a)
          {
             output &= 0b11111110;
          }
-         else if (_context.controller.b)
+         if (_context.controller.b)
          {
             output &= 0b11111101;
          }
@@ -75,15 +75,15 @@ public static class GamePad
          {
             output &= 0b11111101;
          }
-         else if (_context.controller.right)
+         if (_context.controller.right)
          {
             output &= 0b11111110;
          }
-         else if (_context.controller.up)
+         if (_context.controller.up)
          {
             output &= 0b11111011;
          }
-         else if (_context.controller.down)
+         if (_context.controller.down)
          {
             output &= 0b11110111;
          }

@@ -52,6 +52,29 @@ public static class Cart
 {
    private static CartContext _cartContext = new CartContext();
 
+   public static bool CartNeedSave()
+   {
+      return _cartContext.NeedSave;
+   }
+
+   public static bool CartMBC1()
+   {
+      if (_cartContext.Header is RomHeader header)
+      {
+         return Common.BETWEEN(header.Type, 1, 3);
+      }
+      return false;
+   }
+
+   public static bool CartBattery()
+   {
+      if (_cartContext.Header is RomHeader header)
+      {
+         return header.Type == 3;
+      }
+      return false;
+   }
+
    /// <summary>
    /// 
    /// </summary>
@@ -96,26 +119,6 @@ public static class Cart
       return "UNKNOWN";
    }
 
-   public static bool CartNeedSave()
-   {
-      return _cartContext.NeedSave;
-   }
-
-   public static bool CartMBC1()
-   {
-      if (_cartContext.Header is RomHeader header)
-      {
-         return Common.BETWEEN(header.Type, 1, 3);
-      }
-      return false;
-   }
-
-   public static bool CartBattery()
-   {
-      // mbc1 only for now
-      return _cartContext.Battery;
-   }
-
    public static void CartSetupBanking()
    {
       if (_cartContext.Header is RomHeader header)
@@ -149,8 +152,6 @@ public static class Cart
       _cartContext.Filename = cart;
       _cartContext.RomData = File.ReadAllBytes(cart);
       _cartContext.RomSize = (uint)_cartContext.RomData.Length;
-      _cartContext.Battery = Cart.CartBattery();
-      _cartContext.NeedSave = false;
 
       // Load title from file
       byte[] titleBytes = new byte[16];
@@ -180,6 +181,9 @@ public static class Cart
       {
          return false;
       }
+
+      _cartContext.Battery = Cart.CartBattery();
+      _cartContext.NeedSave = false;
 
       // Read cart file
       if (!File.Exists(cart))
@@ -219,41 +223,71 @@ public static class Cart
 
    public static void CartBatteryLoad()
    {
+      if (_cartContext.RamBank == null)
+      {
+         return;
+      }
 
+      string fn;
+      fn = $"{_cartContext.Filename}.battery";
+
+      try
+      {
+         using (var fs = new FileStream(fn, FileMode.Open, FileAccess.Read))
+         {
+            fs.Read(_cartContext.RamBank, 0, 0x2000);
+         }
+      }
+      catch (Exception e)
+      {
+         Console.WriteLine($"FAILED TO OPEN: {fn}");
+         Console.WriteLine(e.Message);
+         return;
+      }
    }
 
    public static void CartBatterySave()
    {
+      if (_cartContext.RamBank == null)
+      {
+         return;
+      }
 
+      string fn;
+      fn = $"{_cartContext.Filename}.battery";
+
+      try
+      {
+         using (var fs = new FileStream(fn, FileMode.Create, FileAccess.Write))
+         {
+            fs.Write(_cartContext.RamBank, 0, 0x2000);
+         }
+      } catch (Exception e)
+      {
+         Console.WriteLine($"FAILED TO OPEN: {fn}");
+         Console.WriteLine(e.Message);
+         return;
+      }
    }
 
-   public static byte CartRead(UInt16 address)
+   public static byte CartRead(ushort address)
    {
-      if (address < 0x4000)
+      if (!CartMBC1() || address < 0x4000)
       {
          return _cartContext.RomData[address];
       }
 
-      if (!Cart.CartMBC1())
-      {
-         return 0xFF;
-      }
-
       if ((address & 0xE000) == 0xA000)
       {
-         if (!_cartContext.RamEnabled)
+         if (!_cartContext.RamEnabled || _cartContext.RamBank == null)
             return 0xFF;
-
-         if (_cartContext.RamBank == null)
-         {
-            return 0xFF;
-         }
 
          return _cartContext.RamBank[address - 0xA000];
       }
-          
+
       return _cartContext.RomData[address - 0x4000 + _cartContext.RomBankXOffset];
    }
+
 
    public static void CartWrite(UInt16 address, byte value) 
    {
@@ -317,11 +351,12 @@ public static class Cart
             return;
 
          _cartContext.RamBank[address - 0xA000] = value;
-      }
 
-      if (_cartContext.Battery)
-      {
-         _cartContext.NeedSave = true;
+
+         if (_cartContext.Battery)
+         {
+            _cartContext.NeedSave = true;
+         }
       }
    }
 }
