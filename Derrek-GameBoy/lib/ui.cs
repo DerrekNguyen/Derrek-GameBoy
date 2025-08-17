@@ -6,8 +6,8 @@ using System.Runtime.InteropServices;
 
 public static class UI
 {
-   private static int SCREEN_WIDTH = 1024;
-   private static int SCREEN_HEIGHT = 768;
+   private static int SCREEN_WIDTH = 716;
+   private static int SCREEN_HEIGHT = 716;
 
    public static IntPtr sdlWindow;
    public static IntPtr sdlRenderer;
@@ -40,29 +40,29 @@ public static class UI
                                               (int)SDL2.SDL.SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING,
                                               SCREEN_WIDTH, SCREEN_HEIGHT);
       
-      SDL2.SDL.SDL_CreateWindowAndRenderer(16 * 8 * scale, 32 * 8 * scale, 0, out sdlDebugWindow, out sdlDebugRenderer);
+      //SDL2.SDL.SDL_CreateWindowAndRenderer(16 * 8 * scale, 32 * 8 * scale, 0, out sdlDebugWindow, out sdlDebugRenderer);
 
-      debugScreen = SDL2.SDL.SDL_CreateRGBSurface(
-         0,
-         (16 * 8 * scale) + (16 * scale),
-         (32 * 8 * scale) + (64 * scale),
-         32,
-         0x00FF0000,
-         0x0000FF00,
-         0x000000FF,
-         0xFF000000);
+      //debugScreen = SDL2.SDL.SDL_CreateRGBSurface(
+      //   0,
+      //   (16 * 8 * scale) + (16 * scale),
+      //   (32 * 8 * scale) + (64 * scale),
+      //   32,
+      //   0x00FF0000,
+      //   0x0000FF00,
+      //   0x000000FF,
+      //   0xFF000000);
 
-      sdlDebugTexture = SDL2.SDL.SDL_CreateTexture(
-         sdlDebugRenderer,
-         SDL2.SDL.SDL_PIXELFORMAT_ARGB8888,
-         (int)SDL2.SDL.SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING,
-         (16 * 8 * scale) + (16 * scale),
-         (32 * 8 * scale) + (64 * scale)
-      );
+      //sdlDebugTexture = SDL2.SDL.SDL_CreateTexture(
+      //   sdlDebugRenderer,
+      //   SDL2.SDL.SDL_PIXELFORMAT_ARGB8888,
+      //   (int)SDL2.SDL.SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING,
+      //   (16 * 8 * scale) + (16 * scale),
+      //   (32 * 8 * scale) + (64 * scale)
+      //);
 
-      int x, y;
-      SDL2.SDL.SDL_GetWindowPosition(sdlWindow, out x, out y);
-      SDL2.SDL.SDL_SetWindowPosition(sdlDebugWindow, x + SCREEN_WIDTH + 10, y);
+      //int x, y;
+      //SDL2.SDL.SDL_GetWindowPosition(sdlWindow, out x, out y);
+      //SDL2.SDL.SDL_SetWindowPosition(sdlDebugWindow, x + SCREEN_WIDTH + 10, y);
    }
 
    private static ulong[] tileColors = {0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000};
