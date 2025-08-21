@@ -14,6 +14,13 @@ public static class APU
 {
    private static SquareChannel Channel1 = new SquareChannel1();
 
+   public static void Tick()
+   {
+      // Add additional ticks as time goes on.
+
+      PulsePhaseTimer.Tick();
+   }
+
    public static void FrequencySweep()
    {
       byte unit = Channel1.Read(0xFF10);

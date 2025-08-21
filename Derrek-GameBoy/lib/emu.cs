@@ -138,6 +138,7 @@ public static class Emulator
          }
 
          DMA.Tick();
+         APU.Tick();
       }
    }
 }

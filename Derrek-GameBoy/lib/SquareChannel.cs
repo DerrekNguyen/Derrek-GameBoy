@@ -1,13 +1,45 @@
 ﻿using System;
 
+public static class LengthCounter
+{
+
+}
+
+public static class PulsePhaseTimer
+{
+   public static byte phase = 0;
+   public static UInt16 counter = (UInt16)4 * 2048;
+   public static UInt16 frequency = 0;
+
+   public static void Tick()
+   {
+      counter--;
+      if (counter == 0)
+      {
+         // Reload counter and move one step in the waveform
+         counter = (UInt16)(4 * (2048 - frequency));
+         phase = (byte)((phase + 1) % 8);
+      }
+   }
+
+   public static void Trigger()
+   {
+      counter = (UInt16)(4 * (2048 - frequency));
+
+      // Triggering does not reset phase!
+   }
+}
+
 public abstract class SquareChannel
 {
-   // Duty   Waveform    Ratio
-   // -------------------------
-   // 0      00000001    12.5%
-   // 1      10000001    25%
-   // 2      10000111    50%
-   // 3      01111110    75%
+   /*
+   Duty   Waveform    Ratio
+   -------------------------
+   0      00000001    12.5%
+   1      10000001    25%
+   2      10000111    50%
+   3      01111110    75%
+   */
    public byte[] dutyCycles = new byte[4]
    {
       0b00000001,
@@ -15,6 +47,11 @@ public abstract class SquareChannel
       0b10000111,
       0b01111110
    };
+
+   public void Timer()
+   {
+
+   }
 
    public abstract byte Read(UInt16 address);
    public abstract void Write(UInt16 address, byte value);
