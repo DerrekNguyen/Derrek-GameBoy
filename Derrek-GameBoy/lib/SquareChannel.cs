@@ -1,14 +1,80 @@
 ﻿using System;
 
+public static class Envelope
+{
+   // Active counter values
+   public static byte volume;
+   public static byte counter;
+   public static byte period;
+   public static bool direction; // true for increment, false for decrement
+
+   // Configured values via registers
+   public static byte startingVolume;
+   public static byte configuredPeriod;
+   public static bool configuredDirection; // true for increment, false for decrement
+
+   public static void Clock()
+   {
+      if (period == 0) return;
+
+      counter--;
+      if (counter == 0)
+      {
+         counter = period;
+
+         if (direction)
+         {
+            if (volume < 15) volume++;
+         }
+         else
+         {
+            if (volume > 0) volume--;
+         }
+      }
+   }
+
+   public static void Trigger()
+   {
+      volume = startingVolume;
+      direction = configuredDirection;
+      period = configuredPeriod;
+
+      counter = (period == 0) ? (byte)0 : period;
+   }
+} 
+
 public static class LengthCounter
 {
+   public static bool enabled = false;
+   public static byte counter = 64;
 
-}
+   public static void Load(byte length)
+   {
+      counter = (byte)(64 - length);
+   }
+
+   public static bool Clock()
+   {
+      if (!enabled || counter == 0) return false;
+
+      counter--;
+      if (counter == 0)
+         enabled = false;
+
+      return true;
+   }
+
+   public static void Trigger()
+   {
+      if (counter == 0)
+         counter = 64;
+   }
+} 
 
 public static class PulsePhaseTimer
 {
    public static byte phase = 0;
-   public static UInt16 counter = (UInt16)4 * 2048;
+   public static UInt16 counter = 0;
    public static UInt16 frequency = 0;
 
    public static void Tick()
@@ -17,14 +83,14 @@ public static class PulsePhaseTimer
       if (counter == 0)
       {
          // Reload counter and move one step in the waveform
-         counter = (UInt16)(4 * (2048 - frequency));
-         phase = (byte)((phase + 1) % 8);
+         counter = (UInt16)(4 * (2048 - (frequency & 0x7FF)));
+         phase = (byte)((phase + 1) & 7);
       }
    }
 
    public static void Trigger()
    {
-      counter = (UInt16)(4 * (2048 - frequency));
+      counter = (UInt16)(4 * (2048 - (frequency & 0x7FF)));
 
       // Triggering does not reset phase!
    }
