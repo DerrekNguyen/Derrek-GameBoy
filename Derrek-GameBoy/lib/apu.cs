@@ -12,13 +12,12 @@ public enum ChannelType
 
 public static class APU
 {
-   private static SquareChannel Channel1 = new SquareChannel1();
+   private static PulseChannel Channel1 = new PulseChannel1();
 
    public static void Tick()
    {
       // Add additional ticks as time goes on.
-
-      PulsePhaseTimer.Tick();
+      Channel1.Tick();
    }
 
    public static void FrequencySweep()
