@@ -1,19 +1,19 @@
 ﻿using System;
 
-public static class Envelope
+public class Envelope
 {
    // Active counter values
-   public static byte volume;
-   public static byte counter;
-   public static byte period;
-   public static bool direction; // true for increment, false for decrement
+   public byte volume;
+   public byte counter;
+   public byte period;
+   public bool direction; // true for increment, false for decrement
 
    // Configured values via registers
-   public static byte startingVolume;
-   public static byte configuredPeriod;
-   public static bool configuredDirection; // true for increment, false for decrement
+   public byte startingVolume;
+   public byte configuredPeriod;
+   public bool configuredDirection; // true for increment, false for decrement
 
-   public static void Clock()
+   public void Clock()
    {
       if (period == 0) return;
 
@@ -33,7 +33,7 @@ public static class Envelope
       }
    }
 
-   public static void Trigger()
+   public void Trigger()
    {
       volume = startingVolume;
       direction = configuredDirection;
@@ -43,41 +43,41 @@ public static class Envelope
    }
 } 
 
-public static class LengthCounter
+public class LengthCounter
 {
-   public static bool enabled = false;
-   public static byte counter = 64;
+   public bool enabled = false;
+   public byte counter = 64;
 
-   public static void Load(byte length)
+   public void Load(byte length)
    {
       counter = (byte)(64 - length);
    }
 
-   public static bool Clock()
+   public bool Clock(ref bool channelEnabled)
    {
       if (!enabled || counter == 0) return false;
 
       counter--;
       if (counter == 0)
-         enabled = false;
+         channelEnabled = false;
 
       return true;
    }
 
-   public static void Trigger()
+   public void Trigger()
    {
       if (counter == 0)
          counter = 64;
    }
 } 
 
-public static class PulsePhaseTimer
+public class PulsePhaseTimer
 {
-   public static byte phase = 0;
-   public static UInt16 counter = 0;
-   public static UInt16 frequency = 0;
+   public byte phase = 0;
+   public UInt16 counter = 0;
+   public UInt16 frequency = 0;
 
-   public static void Tick()
+   public void Tick()
    {
       counter--;
       if (counter == 0)
@@ -88,7 +88,7 @@ public static class PulsePhaseTimer
       }
    }
 
-   public static void Trigger()
+   public void Trigger()
    {
       counter = (UInt16)(4 * (2048 - (frequency & 0x7FF)));
 
@@ -96,7 +96,7 @@ public static class PulsePhaseTimer
    }
 }
 
-public abstract class SquareChannel
+public class DutyCycle
 {
    /*
    Duty   Waveform    Ratio
@@ -114,18 +114,64 @@ public abstract class SquareChannel
       0b01111110
    };
 
-   public void Timer()
-   {
+   public byte waveDuty;
+}
 
+public abstract class PulseChannel
+{
+   public bool _channelEnabled;
+   public PulsePhaseTimer _timer = new();
+   public DutyCycle _dutyCycle = new();
+   public LengthCounter _lengthCounter = new();
+   public Envelope _envelope = new();
+
+
+   public void Tick()
+   {
+      _timer.Tick();
    }
+
+   public void ClockLengthCounter()
+   {
+      _lengthCounter.Clock(ref _channelEnabled);
+   }
+
+   public void ClockEnvelope()
+   {
+      _envelope.Clock();
+   }
+
+   public void Trigger()
+   {
+      // Note: If the DAC is disabled, triggering should not re-enable the channel
+      _channelEnabled = true;
+
+      _timer.Trigger();
+      _lengthCounter.Trigger();
+      _envelope.Trigger();
+   }
+
+   public abstract byte Sample();
 
    public abstract byte Read(UInt16 address);
    public abstract void Write(UInt16 address, byte value);
 }
 
-public class SquareChannel1 : SquareChannel
+public class PulseChannel1 : PulseChannel
 {
    private byte NR10, NR11, NR12, NR13, NR14;
+
+   public override byte Sample()
+   {
+      if (!_channelEnabled) return 0;
+ 
+      // GameBoy bits are MSB, meaning bit 0 means the MSB. Therefore, we need to reverse the duty bit (0 => 7, 1 => 6, etc.)
+      byte waveformStep = (byte)((_dutyCycle.dutyCycles[_dutyCycle.waveDuty] >> (7 - _timer.phase)) & 0b1);
+      byte volume = _envelope.volume;
+
+      return (byte)(waveformStep * volume);
+   }
+
    public override byte Read(UInt16 address)
    {
       switch (address)
@@ -148,22 +194,37 @@ public class SquareChannel1 : SquareChannel
       {
          case 0xFF10:
             NR10 = value;
+
+            // TODO: Implement sweep.
             break;
 
          case 0xFF11:
             NR11 = value;
+
+            _dutyCycle.waveDuty = (byte)((value >> 6) & 0b00000011);
+            _lengthCounter.Load((byte)(value & 0b00111111));   
             break;
 
          case 0xFF12:
             NR12 = value;
+
+            _envelope.startingVolume = (byte)((value >> 4) & 0b00001111);
+            _envelope.configuredDirection = ((value >> 3) & 0b1) != 0;
+            _envelope.configuredPeriod = (byte)(value & 0b00000111);
             break;
 
          case 0xFF13:
             NR13 = value;
+
+            _timer.frequency = (UInt16)(_timer.frequency & 0x0700| (UInt16)value);
             break;
 
          case 0xFF14:
             NR14 = value;
+
+            _timer.frequency = (UInt16)(_timer.frequency & 0x00FF | (UInt16)((value & 0x07) << 8));
+            _lengthCounter.enabled = (value & 0b01000000) != 0;
+            // TODO: Implement trigger (bit 7 (LSB) / 0 (MSB))
             break;
       }
    }
