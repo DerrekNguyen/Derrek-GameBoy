@@ -135,10 +135,10 @@ public static class Emulator
             _context.Ticks++;
             Timer.Tick();
             PPU.Tick();
+            APU.Tick();
          }
 
          DMA.Tick();
-         APU.Tick();
       }
    }
 }
