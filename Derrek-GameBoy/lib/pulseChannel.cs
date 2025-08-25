@@ -1,5 +1,26 @@
 ﻿using System;
 
+public class DutyCycle
+{
+   /*
+   Duty   Waveform    Ratio
+   -------------------------
+   0      00000001    12.5%
+   1      10000001    25%
+   2      10000111    50%
+   3      01111110    75%
+   */
+   public byte[] dutyCycles = new byte[4]
+   {
+      0b00000001,
+      0b10000001,
+      0b10000111,
+      0b01111110
+   };
+
+   public byte waveDuty;
+}
+
 public class Sweep
 {
    public byte period;
@@ -88,129 +109,12 @@ public class Sweep
    }
 }
 
-public class Envelope
-{
-   // Active counter values
-   public byte volume;
-   public byte counter;
-   public byte period;
-   public bool direction; // true for increment, false for decrement
-
-   // Configured values via registers
-   public byte startingVolume;
-   public byte configuredPeriod;
-   public bool configuredDirection; // true for increment, false for decrement
-
-   public void Clock()
-   {
-      if (period == 0) return;
-
-      counter--;
-      if (counter == 0)
-      {
-         counter = period;
-
-         if (direction)
-         {
-            if (volume < 15) volume++;
-         }
-         else
-         {
-            if (volume > 0) volume--;
-         }
-      }
-   }
-
-   public void Trigger()
-   {
-      volume = startingVolume;
-      direction = configuredDirection;
-      period = configuredPeriod;
-
-      counter = (period == 0) ? (byte)0 : period;
-   }
-} 
-
-public class LengthCounter
-{
-   public bool enabled = false;
-   public byte counter = 64;
-
-   public void Load(byte length)
-   {
-      counter = (byte)(64 - length);
-   }
-
-   public bool Clock(ref bool channelEnabled)
-   {
-      if (!enabled || counter == 0) return false;
-
-      counter--;
-      if (counter == 0)
-         channelEnabled = false;
-
-      return true;
-   }
-
-   public void Trigger()
-   {
-      if (counter == 0)
-         counter = 64;
-   }
-} 
-
-public class PulsePhaseTimer
-{
-   public byte phase = 0;
-   public UInt16 counter = 0;
-   public UInt16 frequency = 0;
-
-   public void Tick()
-   {
-      counter--;
-      if (counter == 0)
-      {
-         // Reload counter and move one step in the waveform
-         counter = (UInt16)(4 * (2048 - (frequency & 0x7FF)));
-         phase = (byte)((phase + 1) & 7);
-      }
-   }
-
-   public void Trigger()
-   {
-      counter = (UInt16)(4 * (2048 - (frequency & 0x7FF)));
-
-      // Triggering does not reset phase!
-   }
-}
-
-public class DutyCycle
-{
-   /*
-   Duty   Waveform    Ratio
-   -------------------------
-   0      00000001    12.5%
-   1      10000001    25%
-   2      10000111    50%
-   3      01111110    75%
-   */
-   public byte[] dutyCycles = new byte[4]
-   {
-      0b00000001,
-      0b10000001,
-      0b10000111,
-      0b01111110
-   };
-
-   public byte waveDuty;
-}
-
 public abstract class PulseChannel
 {
    public bool _channelEnabled;
-   public PulsePhaseTimer _timer = new();
+   public PhaseTimer _timer = new(false);
    public DutyCycle _dutyCycle = new();
-   public LengthCounter _lengthCounter = new();
+   public LengthCounter _lengthCounter = new(64);
    public Envelope _envelope = new();
 
    public void ClockLengthCounter()
