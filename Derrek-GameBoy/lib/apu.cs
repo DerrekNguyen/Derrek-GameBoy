@@ -9,7 +9,6 @@ public class PhaseTimer
    public UInt16 frequency = 0;
    private UInt16 reloadPeriod = 0;
 
-
    public PhaseTimer(bool isWaveChannel)
    {
       wave = isWaveChannel;
@@ -26,7 +25,7 @@ public class PhaseTimer
    public void Tick()
    {
       counter--;
-      if (counter == 0)
+      if (counter <= 0)
       {
          reloadPeriod = CalculatePeriod();
          counter = reloadPeriod;
@@ -50,10 +49,8 @@ public class PhaseTimer
 
       if (wave)
          phase = 0; // Wave channel resets phase on trigger
-
    }
 }
-
 
 public class Envelope
 {

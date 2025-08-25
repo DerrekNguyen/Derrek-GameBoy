@@ -10,7 +10,7 @@ class Program
    }
    static void Main()
    {
-      String[] args = [GetRomPath("zelda.gb")];
+      String[] args = [GetRomPath("tetris.gb")];
       Emulator.EmuRun(args);
    }
 }
