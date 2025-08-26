@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Reflection.Metadata.Ecma335;
 
+// TODO: Implement noise channel specific features
 public class PhaseTimer
 {
-   public bool wave = false; // true for wave channel, false for pulse channels
+   public bool wave = false; // true for wave channel
    public byte phase = 0;
    public UInt16 counter = 0;
    public UInt16 frequency = 0;
@@ -30,7 +31,7 @@ public class PhaseTimer
          reloadPeriod = CalculatePeriod();
          counter = reloadPeriod;
          // Reload counter and move one step in the waveform
-
+ 
          if (!wave)
          {
             phase = (byte)((phase + 1) & 7);

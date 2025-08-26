@@ -1,5 +1,45 @@
 ﻿using System;
 
+// linear feedback shift register for noise generation
+public class LFSR
+{
+   public UInt16 lfsr = 0x7FFF; // 15 bits, initialized to all 1s
+   public bool widthMode = false; // false: 15-bit, true: 7-bit
+   public int divisorCode = 0; // 0-7
+   private int[] _divisor = new int[8] { 8, 16, 32, 48, 64, 80, 96, 112 };
+   public int divisor
+   {
+      get => _divisor[divisorCode];
+   }
+
+   public void Tick()
+   {
+      bool setHigh = ((lfsr & 0b1) ^ ((lfsr >> 1) & 0b1)) != 0;
+      lfsr >>= 1;
+      if (setHigh)
+         lfsr |= 0x4000; // Set the 15th bit
+      else
+         lfsr &= 0x3FFF; // Clear the 15th bit
+      if (widthMode)
+      {
+         // Also set/clear the 7th bit
+         if (setHigh)
+            lfsr |= 0x40;
+         else
+            lfsr &= 0xBF;
+      }
+
+
+
+
+   }
+
+   public bool Sample()
+   {
+      return (lfsr & 0x1) == 0;
+   }
+}
+
 public class NoiseChannel
 {
    private byte NR41, NR42, NR43, NR44;
@@ -7,6 +47,7 @@ public class NoiseChannel
 
    public LengthCounter _lengthCounter = new LengthCounter(64); // 64 for noise channel
    public Envelope _envelope = new Envelope();
+   public LFSR _lfsr = new LFSR();
 
    public byte Read(UInt16 address)
    {
@@ -40,6 +81,7 @@ public class NoiseChannel
 
          case 0xFF22:
             NR43 = value;
+
 
             // TODO: random amplitude
             break;
