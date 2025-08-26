@@ -89,7 +89,7 @@ public class WaveChannel
             case 0xFF1D:
                NR33 = value;
 
-               _timer.frequency = (ushort)((_timer.frequency & 0x700) | value);
+               _timer.frequency = (ushort)((_timer.frequency & 0x0700) | value);
                break;
 
             case 0xFF1E:
