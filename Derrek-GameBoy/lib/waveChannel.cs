@@ -97,7 +97,7 @@ public class WaveChannel
 
                _timer.frequency = (UInt16)((_timer.frequency & 0x00FF) | ((value & 0x07) << 8));
                _lengthCounter.enabled = (value & 0b01000000) == 0x40;
-               if ((value & 0x80) == 0x80) Trigger(DACEnabled);
+               if ((value & 0x80) == 0x80) Trigger();
                break;
             default:
                break;
@@ -105,16 +105,15 @@ public class WaveChannel
       }
    }
 
-   public void Trigger(bool dacEnabled)
+   public void Trigger()
    {
-      if (!dacEnabled)
+      if (!DACEnabled)
       {
          _channelEnabled = false;
          return;
       }
 
       _channelEnabled = true;
-
       _lengthCounter.Trigger();
       _timer.Trigger();
    }

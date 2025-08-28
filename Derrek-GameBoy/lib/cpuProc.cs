@@ -426,7 +426,6 @@ public static class CPUProc
 
       bool flagC = CPU.CPU_FLAG_C;
 
-      //TODO: part 8
       switch (bit)
       {
          // RLC

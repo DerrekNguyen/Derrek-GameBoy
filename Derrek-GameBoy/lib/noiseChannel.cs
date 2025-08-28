@@ -6,11 +6,7 @@ public class LFSR
    public UInt16 lfsr = 0x7FFF; // 15 bits, initialized to all 1s
    public bool widthMode = false; // false: 15-bit, true: 7-bit
    public int divisorCode = 0; // 0-7
-   private int[] _divisor = new int[8] { 8, 16, 32, 48, 64, 80, 96, 112 };
-   public int divisor
-   {
-      get => _divisor[divisorCode];
-   }
+   public int[] divisor = [8, 16, 32, 48, 64, 80, 96, 112];
 
    public void Tick()
    {
@@ -28,13 +24,9 @@ public class LFSR
          else
             lfsr &= 0xBF;
       }
-
-
-
-
    }
 
-   public bool Sample()
+   public bool Output()
    {
       return (lfsr & 0x1) == 0;
    }
@@ -44,8 +36,14 @@ public class NoiseChannel
 {
    private byte NR41, NR42, NR43, NR44;
    public bool _channelEnabled = false;
+   public bool DACEnabled
+   {
+      get => (NR42 & 0xF8) != 0;
+   }
 
-   public LengthCounter _lengthCounter = new LengthCounter(64); // 64 for noise channel
+   public UInt16 timer;
+   public byte clockShift;
+   public LengthCounter _lengthCounter = new LengthCounter(64);
    public Envelope _envelope = new Envelope();
    public LFSR _lfsr = new LFSR();
 
@@ -82,9 +80,50 @@ public class NoiseChannel
          case 0xFF22:
             NR43 = value;
 
+            _lfsr.divisorCode = value & 0x7;
+            _lfsr.widthMode = (value & 0x8) == 0x8;
+            clockShift = (byte)((value >> 4) & 0xF);
+            break;
 
-            // TODO: random amplitude
+         case 0xFF23:
+            NR44 = value;
+
+            _lengthCounter.enabled = ((value >> 6) & 0b1) != 0;
+            if ((value & 0x80) == 0x80) Trigger();
             break;
       }
+   }
+
+   public void Tick()
+   {
+      if (--timer <= 0)
+      {
+         timer = (UInt16)(_lfsr.divisor[_lfsr.divisorCode] << clockShift);
+         _lfsr.Tick();
+      }
+   }
+
+   public void Trigger()
+   {
+      if (!DACEnabled)
+      {
+         _channelEnabled = false;
+         return;
+      }
+
+      _channelEnabled = true;
+      _lengthCounter.Trigger();
+      timer = (UInt16)(_lfsr.divisor[_lfsr.divisorCode] << clockShift);
+      _envelope.Trigger();
+      _lfsr.lfsr = 0x7FFF;
+   }
+
+   public byte Sample()
+   {
+      if (_channelEnabled && DACEnabled && _lfsr.Output())
+      {
+         return _envelope.volume;
+      }
+      return 0;
    }
 }

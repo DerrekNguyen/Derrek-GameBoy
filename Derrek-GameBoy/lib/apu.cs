@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Reflection.Metadata.Ecma335;
 
-// TODO: Implement noise channel specific features
 public class PhaseTimer
 {
    public bool wave = false; // true for wave channel
@@ -60,6 +59,7 @@ public class Envelope
    public byte counter;
    public byte period;
    public bool direction; // true for increment, false for decrement
+   public bool enabled;
 
    // Configured values via registers
    public byte startingVolume;
@@ -71,18 +71,25 @@ public class Envelope
       if (period == 0) return;
 
       counter--;
-      if (counter == 0)
+      if (counter <= 0)
       {
          counter = period;
+         if (counter == 0) counter = 8;
 
-         if (direction)
+         if (enabled && period > 0)
          {
-            if (volume < 15) volume++;
+            if (direction)
+            {
+               if (volume < 15) volume++;
+            }
+            else
+            {
+               if (volume > 0) volume--;
+            }
          }
-         else
-         {
-            if (volume > 0) volume--;
-         }
+
+         if (volume == 0 || volume == 15)
+            enabled = false; // Stop if volume hits limits
       }
    }
 
@@ -91,6 +98,7 @@ public class Envelope
       volume = startingVolume;
       direction = configuredDirection;
       period = configuredPeriod;
+      enabled = true;
 
       counter = (period == 0) ? (byte)0 : period;
    }
@@ -184,6 +192,8 @@ public static class APU
 {
    public static PulseChannel1 Channel1 = new PulseChannel1();
    public static PulseChannel2 Channel2 = new PulseChannel2();
+   public static WaveChannel Channel3 = new WaveChannel();
+   public static NoiseChannel Channel4 = new NoiseChannel();
    public static FrameSequencer _frameSequencer = new();
    private static int _frameSequencerStep = 0;
 
@@ -191,8 +201,8 @@ public static class APU
    {
       Channel1.Tick();
       Channel2.Tick();
-      //Channel3.Tick();
-      //Channel4.Tick();
+      Channel3.Tick();
+      Channel4.Tick();
 
       if (++_frameSequencerStep >= 8192)
       {
