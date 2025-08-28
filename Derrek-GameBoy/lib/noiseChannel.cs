@@ -94,6 +94,16 @@ public class NoiseChannel
       }
    }
 
+   public void ClockLengthCounter()
+   {
+      _lengthCounter.Clock(ref _channelEnabled);
+   }
+
+   public void ClockEnvelope()
+   {
+      _envelope.Clock();
+   }
+
    public void Tick()
    {
       if (--timer <= 0)

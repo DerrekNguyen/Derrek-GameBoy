@@ -142,13 +142,13 @@ public class LengthCounter
 
 public class FrameSequencer
 {
-   private int step = 0;
+   public int step;
 
    public void Tick(
       PulseChannel1 ch1,
-      PulseChannel2 ch2
-      //WaveChannel ch3,
-      //NoiseChannel ch4
+      PulseChannel2 ch2,
+      WaveChannel ch3,
+      NoiseChannel ch4
    )
    {
       switch (step)
@@ -159,8 +159,8 @@ public class FrameSequencer
          case 6:
             ch1.ClockLengthCounter();
             ch2.ClockLengthCounter();
-            //ch3.ClockLengthCounter();
-            //ch4.ClockLengthCounter();
+            ch3.ClockLengthCounter();
+            ch4.ClockLengthCounter();
             break;
       }
 
@@ -177,9 +177,12 @@ public class FrameSequencer
          case 7:
             ch1.ClockEnvelope();
             ch2.ClockEnvelope();
-            //ch4.ClockEnvelope();
+            ch4.ClockEnvelope();
             break;
       }
+
+      step++;
+      if (step > 7) step = 0;
    }
 
    public bool LengthWillClockThisStep()
@@ -195,28 +198,59 @@ public static class APU
    public static WaveChannel Channel3 = new WaveChannel();
    public static NoiseChannel Channel4 = new NoiseChannel();
    public static FrameSequencer _frameSequencer = new();
-   private static int _frameSequencerStep = 0;
+   public static int frameSequencerCountDown = 8192;
+   public static int downSampleCounter = 95; // (4194304 / 44100) ≈ 95
+
+   public const int sampleSize = 4096; // Size of the audio sample buffer
+   public static SDL2.SDL.SDL_AudioSpec audioSpec;
+
+   static APU()
+   {
+      audioSpec = new SDL2.SDL.SDL_AudioSpec
+      {
+         freq = 44100,
+         format = SDL2.SDL.AUDIO_F32SYS,
+         channels = 2,
+         samples = sampleSize, // Adjust as needed
+         callback = null,
+         userdata = IntPtr.Zero
+      };
+
+      SDL2.SDL.SDL_AudioSpec obtainedSpec;
+      SDL2.SDL.SDL_OpenAudio(ref audioSpec, out obtainedSpec);
+      SDL2.SDL.SDL_PauseAudio(0); // Start audio playback
+   }
+
+   public static void SendData()
+   {
+      // TODO
+   }
+
+   public static void ReceiveData()
+   {
+      // TODO
+   }
 
    public static void Tick()
    {
+      // Ticks every 8192 CPU cycles (on a 512 scale, 4194304/512 = 8192).
+      if (--frameSequencerCountDown <= 0)
+      {
+         frameSequencerCountDown = 8192;
+         _frameSequencer.Tick(Channel1, Channel2, Channel3, Channel4);
+      }
+
       Channel1.Tick();
       Channel2.Tick();
       Channel3.Tick();
       Channel4.Tick();
 
-      if (++_frameSequencerStep >= 8192)
+      // downsample to 44100 Hz
+      if (--downSampleCounter <= 0)
       {
-         _frameSequencerStep = 0;
-         _frameSequencer.Tick(Channel1, Channel2);
-      }
+         downSampleCounter = 95;
 
-      //// Optionally: sample mixer at your chosen rate
-      //// e.g., downsample to 44100 Hz
-      //sampleClock++;
-      //if (sampleClock >= cyclesPerSample)
-      //{
-      //   sampleClock -= cyclesPerSample;
-      //   Mixer.PushSample(ch1.Sample(), ch2.Sample(), ch3.Sample(), ch4.Sample());
-      //}
+         // TODO: Mix and output audio samples
+      }
    }
 }

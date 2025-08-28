@@ -105,6 +105,11 @@ public class WaveChannel
       }
    }
 
+   public void ClockLengthCounter()
+   {
+      _lengthCounter.Clock(ref _channelEnabled);
+   }
+
    public void Trigger()
    {
       if (!DACEnabled)
