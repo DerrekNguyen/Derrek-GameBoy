@@ -239,6 +239,15 @@ public class PulseChannel1 : PulseChannel
    {
       _timer.Tick();
    }
+
+   public void ClearRegisters()
+   {
+      NR10 = 0;
+      NR11 = 0;
+      NR12 = 0;
+      NR13 = 0;
+      NR14 = 0;
+   }
 }
 
 public class PulseChannel2 : PulseChannel
@@ -307,11 +316,21 @@ public class PulseChannel2 : PulseChannel
             _lengthCounter.enabled = (value & 0b01000000) != 0;
             if ((value & 0x80) != 0) Trigger(DACEnabled);
             break;
+
+         default: break;
       }
    }
 
    public override void Tick()
    {
       _timer.Tick();
+   }
+
+   public void ClearRegisters()
+   {
+      NR21 = 0;
+      NR22 = 0;
+      NR23 = 0;
+      NR24 = 0;
    }
 }

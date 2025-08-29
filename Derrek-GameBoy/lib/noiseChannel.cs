@@ -136,4 +136,12 @@ public class NoiseChannel
       }
       return 0;
    }
+
+   public void ClearRegisters()
+   {
+      NR41 = 0;
+      NR42 = 0;
+      NR43 = 0;
+      NR44 = 0;
+   }
 }

@@ -193,6 +193,8 @@ public class FrameSequencer
 
 public static class APU
 {
+   public static byte NR50, NR51, NR52; // Sound control registers
+
    public static PulseChannel1 Channel1 = new PulseChannel1();
    public static PulseChannel2 Channel2 = new PulseChannel2();
    public static WaveChannel Channel3 = new WaveChannel();
@@ -221,12 +223,64 @@ public static class APU
       SDL2.SDL.SDL_PauseAudio(0); // Start audio playback
    }
 
-   public static void SendData()
+   public static void Write(UInt16 address, byte data)
    {
-      // TODO
+      bool enabled = (NR52 & 0x80) != 0;
+      if (!enabled)
+      {
+         Channel1.ClearRegisters();
+         Channel2.ClearRegisters();
+         Channel3.ClearRegisters();
+         Channel4.ClearRegisters();
+      }
+      else
+      {
+         if (address >= 0xFF10 && address <= 0xFF14)
+         {
+            Channel1.Write(address, data);
+         }
+         else if (address >= 0xFF15 && address <= 0xFF19)
+         {
+            Channel2.Write(address, data);
+         }
+         else if (address >= 0xFF1A && address <= 0xFF1E)
+         {
+            Channel3.Write(address, data);
+         }
+         else if (address >= 0xFF1F && address <= 0xFF23)
+         {
+            Channel4.Write(address, data);
+         }
+         else if (address >= 0xFF24 && address <= 0xFF25)
+         {
+            switch (address)
+            {
+               case 0xFF24:
+                  // Master volume & Vin panning (NR50)
+                  NR50 = data;
+                  break;
+
+               case 0xFF25:
+                  // Sound panning (NR51)
+                  NR51 = data;
+                  break;
+            }
+         }
+      }
+
+      // Control/status registers
+      if (address == 0xFF26)
+      {
+         // Audio master control (NR52)
+         NR52 = data;
+      }
+      else if (address >= 0xFF30 && address <= 0xFF3F)
+      {
+         Channel3.Write(address, data);
+      }
    }
 
-   public static void ReceiveData()
+   public static void Read()
    {
       // TODO
    }

@@ -158,4 +158,13 @@ public class WaveChannel
    {
       return outputVolume;
    }
+
+   public void ClearRegisters()
+   {
+      NR30 = 0;
+      NR31 = 0;
+      NR32 = 0;
+      NR33 = 0;
+      NR34 = 0;
+   }
 }
