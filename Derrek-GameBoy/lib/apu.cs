@@ -225,6 +225,12 @@ public static class APU
 
    public static void Write(UInt16 address, byte data)
    {
+      if (address == 0xFF26)
+      {
+         // Writing to NR52 can only clear the sound enable bit (bit 7)
+         NR52 &= (byte)(data & 0x80);
+      }
+
       bool enabled = (NR52 & 0x80) != 0;
       if (!enabled)
       {
