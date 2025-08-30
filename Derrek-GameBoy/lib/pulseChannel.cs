@@ -151,7 +151,6 @@ public abstract class PulseChannel
    }
 
    public abstract byte Sample();
-
    public abstract byte Read(UInt16 address);
    public abstract void Write(UInt16 address, byte value);
    public abstract void Tick();

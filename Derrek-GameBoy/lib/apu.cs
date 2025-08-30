@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection.Metadata.Ecma335;
+using System.Runtime.InteropServices;
 
 public class PhaseTimer
 {
@@ -194,6 +195,10 @@ public class FrameSequencer
 public static class APU
 {
    public static byte NR50, NR51, NR52; // Sound control registers
+   public static byte leftVolume => (byte)((NR50 & 0x70) >> 4);
+   public static byte rightVolume => (byte)(NR50 & 0x07);
+   public static byte leftEnable => (byte)(NR51 >> 4);
+   public static byte rightEnable => (byte)(NR51 & 0x0F);
 
    public static PulseChannel1 Channel1 = new PulseChannel1();
    public static PulseChannel2 Channel2 = new PulseChannel2();
@@ -211,8 +216,10 @@ public static class APU
       0x00,0x00,0x70];
 
    public const int sampleSize = 4096; // Size of the audio sample buffer
+   public static float[] mainBuffer = new float[sampleSize];
+   public static int bufferFillAmount = 0;
    public static SDL2.SDL.SDL_AudioSpec audioSpec;
-   public static bool enabled = false;
+   public static bool enabled = false; 
 
    static APU()
    {
@@ -390,6 +397,144 @@ public static class APU
          downSampleCounter = 95;
 
          // TODO: Mix and output audio samples
+         // Left
+         float bufferIn0 = 0;
+         float bufferIn1 = 0;
+         int volume = (128 * leftVolume) / 7; // Scale 0-7 to 0-128
+         unsafe
+         {
+            if ((leftEnable & 0x10) != 0)
+            {
+               bufferIn1 = ((float)Channel1.Sample()) / 100;
+               float* dst = &bufferIn0;
+               float* src = &bufferIn1;
+               SDL2.SDL.SDL_MixAudioFormat(
+                  (nint)(byte*)(dst),
+                  (nint)(byte*)(src),
+                  SDL2.SDL.AUDIO_F32SYS,
+                  sizeof(float),
+                  volume
+               );
+            }
+            if ((leftEnable & 0x20) != 0)
+            {
+               bufferIn1 = ((float)Channel2.Sample()) / 100;
+               float* dst = &bufferIn0;
+               float* src = &bufferIn1;
+               SDL2.SDL.SDL_MixAudioFormat(
+                  (nint)(byte*)(dst),
+                  (nint)(byte*)(src),
+                  SDL2.SDL.AUDIO_F32SYS,
+                  sizeof(float),
+                  volume
+               );
+            }
+            if ((leftEnable & 0x40) != 0)
+            {
+               bufferIn1 = ((float)Channel3.Sample()) / 100;
+               float* dst = &bufferIn0;
+               float* src = &bufferIn1;
+               SDL2.SDL.SDL_MixAudioFormat(
+                  (nint)(byte*)(dst),
+                  (nint)(byte*)(src),
+                  SDL2.SDL.AUDIO_F32SYS,
+                  sizeof(float),
+                  volume
+               );
+            }
+            if ((leftEnable & 0x80) != 0)
+            {
+               bufferIn1 = ((float)Channel4.Sample()) / 100;
+               float* dst = &bufferIn0;
+               float* src = &bufferIn1;
+               SDL2.SDL.SDL_MixAudioFormat(
+                  (nint)(byte*)(dst),
+                  (nint)(byte*)(src),
+                  SDL2.SDL.AUDIO_F32SYS,
+                  sizeof(float),
+                  volume
+               );
+            }
+         }
+         mainBuffer[bufferFillAmount] = bufferIn0;
+
+         // Right
+         bufferIn0 = 0;
+         volume = (128 * leftVolume) / 7; // Scale 0-7 to 0-128
+         unsafe
+         {
+            if ((leftEnable & 0x01) != 0)
+            {
+               bufferIn1 = ((float)Channel1.Sample()) / 100;
+               float* dst = &bufferIn0;
+               float* src = &bufferIn1;
+               SDL2.SDL.SDL_MixAudioFormat(
+                  (nint)(byte*)(dst),
+                  (nint)(byte*)(src),
+                  SDL2.SDL.AUDIO_F32SYS,
+                  sizeof(float),
+                  volume
+               );
+            }
+            if ((leftEnable & 0x02) != 0)
+            {
+               bufferIn1 = ((float)Channel2.Sample()) / 100;
+               float* dst = &bufferIn0;
+               float* src = &bufferIn1;
+               SDL2.SDL.SDL_MixAudioFormat(
+                  (nint)(byte*)(dst),
+                  (nint)(byte*)(src),
+                  SDL2.SDL.AUDIO_F32SYS,
+                  sizeof(float),
+                  volume
+               );
+            }
+            if ((leftEnable & 0x04) != 0)
+            {
+               bufferIn1 = ((float)Channel3.Sample()) / 100;
+               float* dst = &bufferIn0;
+               float* src = &bufferIn1;
+               SDL2.SDL.SDL_MixAudioFormat(
+                  (nint)(byte*)(dst),
+                  (nint)(byte*)(src),
+                  SDL2.SDL.AUDIO_F32SYS,
+                  sizeof(float),
+                  volume
+               );
+            }
+            if ((leftEnable & 0x08) != 0)
+            {
+               bufferIn1 = ((float)Channel4.Sample()) / 100;
+               float* dst = &bufferIn0;
+               float* src = &bufferIn1;
+               SDL2.SDL.SDL_MixAudioFormat(
+                  (nint)(byte*)(dst),
+                  (nint)(byte*)(src),
+                  SDL2.SDL.AUDIO_F32SYS,
+                  sizeof(float),
+                  volume
+               );
+            }
+         }
+         mainBuffer[bufferFillAmount + 1] = bufferIn0;
+
+         bufferFillAmount += 2;
+      }
+
+      if (bufferFillAmount >= sampleSize)
+      {
+         bufferFillAmount = 0;
+         while (SDL2.SDL.SDL_GetQueuedAudioSize(1) > sampleSize * sizeof(float))
+         {
+            SDL2.SDL.SDL_Delay(1); // Wait for the audio buffer to have space
+         }
+         unsafe
+         {
+            fixed (float* p = mainBuffer)
+            {
+               SDL2.SDL.SDL_QueueAudio(1, (byte)p, sampleSize * sizeof(float));
+            }
+         }
       }
    }
 }
