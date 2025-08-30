@@ -5,6 +5,7 @@ public class WaveChannel
    public bool _channelEnabled = false;
    private byte NR30, NR31, NR32, NR33, NR34;
    public byte[] waveTable = new byte[16]; // 32 4-bit samples
+   public byte sampleByte; // Sample buffer
    public bool DACEnabled
    {
       get => (NR30 & 0x80) != 0;
@@ -121,6 +122,7 @@ public class WaveChannel
       _channelEnabled = true;
       _lengthCounter.Trigger();
       _timer.Trigger();
+      
    }
 
    public void Tick()
@@ -129,7 +131,7 @@ public class WaveChannel
       if (_channelEnabled && DACEnabled)
       {
          int position = _timer.phase / 2; // Each byte contains two 4-bit samples
-         byte sampleByte = waveTable[position];
+         sampleByte = waveTable[position];
          
          if ((_timer.phase & 0x1) == 0)
          {

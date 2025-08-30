@@ -16,7 +16,7 @@ public static class Common
    }
 
    /// <summary>
-   /// Set or Clear the 'n'th bit in byte 'a', depending on flag 'on'
+   /// Set or Clear the 'n'th bit in byte 'a', depending on flag 'on'. MSB is bit 0, LSB is bit 7.
    /// </summary>
    /// <param name="a">Byte variable</param>
    /// <param name="n">Index of the bit</param>

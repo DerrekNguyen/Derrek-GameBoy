@@ -203,8 +203,16 @@ public static class APU
    public static int frameSequencerCountDown = 8192;
    public static int downSampleCounter = 95; // (4194304 / 44100) ≈ 95
 
+   public static byte[] readOrValue =
+      [0x80,0x3f,0x00,0xff,0xbf,
+      0xff,0x3f,0x00,0xff,0xbf,
+      0x7f,0xff,0x9f,0xff,0xbf,
+      0xff,0xff,0x00,0x00,0xbf,
+      0x00,0x00,0x70];
+
    public const int sampleSize = 4096; // Size of the audio sample buffer
    public static SDL2.SDL.SDL_AudioSpec audioSpec;
+   public static bool enabled = false;
 
    static APU()
    {
@@ -231,13 +239,14 @@ public static class APU
          NR52 &= (byte)(data & 0x80);
       }
 
-      bool enabled = (NR52 & 0x80) != 0;
       if (!enabled)
       {
          Channel1.ClearRegisters();
          Channel2.ClearRegisters();
          Channel3.ClearRegisters();
          Channel4.ClearRegisters();
+         NR50 = 0;
+         NR51 = 0;
       }
       else
       {
@@ -278,6 +287,18 @@ public static class APU
       if (address == 0xFF26)
       {
          // Audio master control (NR52)
+         if ((data & 0x80) == 0x80)
+         {
+            if (!enabled)
+            {
+               // Powering on the APU
+               _frameSequencer.step = 0;
+               Channel1._dutyCycle.waveDuty = 0;
+               Channel2._dutyCycle.waveDuty = 0;
+               Channel3.sampleByte = 0;
+               enabled = true;
+            }
+         }
          NR52 = data;
       }
       else if (address >= 0xFF30 && address <= 0xFF3F)
@@ -286,9 +307,67 @@ public static class APU
       }
    }
 
-   public static void Read()
+   public static byte Read(UInt16 address)
    {
-      // TODO
+      byte output = 0xFF;
+      if (address == 0xFF26)
+      {
+         // Audio master control (NR52)
+         byte status = NR52;
+         if (Channel1._channelEnabled) status |= 0x01;
+         if (Channel2._channelEnabled) status |= 0x02;
+         if (Channel3._channelEnabled) status |= 0x04;
+         if (Channel4._channelEnabled) status |= 0x08;
+         output = status;
+      }
+      else if (address >= 0xFF10 && address <= 0xFF14)
+      {
+         output = Channel1.Read(address);
+      }
+      else if (address >= 0xFF15 && address <= 0xFF19)
+      {
+         output = Channel2.Read(address);
+      }
+      else if (address >= 0xFF1A && address <= 0xFF1E)
+      {
+         output = Channel3.Read(address);
+      }
+      else if (address >= 0xFF1F && address <= 0xFF23)
+      {
+         output = Channel4.Read(address);
+      }
+      else if (address >= 0xFF24 && address <= 0xFF26)
+      {
+         switch (address)
+         {
+            case 0xFF24:
+               output =  NR50;
+               break;
+            case 0xFF25:
+               output =  NR51;
+               break;
+            case 0xFF26:
+               Common.BIT_SET(ref NR52, 0, (sbyte)(Channel1._channelEnabled ? 1 : 0));
+               Common.BIT_SET(ref NR52, 1, (sbyte)(Channel2._channelEnabled ? 1 : 0));
+               Common.BIT_SET(ref NR52, 2, (sbyte)(Channel3._channelEnabled ? 1 : 0));
+               Common.BIT_SET(ref NR52, 3, (sbyte)(Channel4._channelEnabled ? 1 : 0));
+               output = NR52;
+               break;
+            default:
+               output = 0xFF;
+               break;
+         }
+      }
+      else if (address >= 0xFF30 && address <= 0xFF3F)
+      {
+         output =  Channel3.Read(address);
+      }
+      if (address >= 0xFF10 && address <= 0xFF26)
+      {
+         output |= readOrValue[address - 0xFF10];
+      }
+
+      return output;
    }
 
    public static void Tick()

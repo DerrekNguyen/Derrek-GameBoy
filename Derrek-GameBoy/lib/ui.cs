@@ -205,7 +205,6 @@ public static class UI
 
    public static void OnKey(bool down, UInt32 keyCode)
    {
-      //TODO: Handle up/down
       switch (keyCode)
       {
          case (uint)SDL2.SDL.SDL_Keycode.SDLK_z:
