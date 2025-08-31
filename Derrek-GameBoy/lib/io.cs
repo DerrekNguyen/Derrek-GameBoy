@@ -31,6 +31,10 @@ public static class IO
       else if (address == 0xFF0F) {
          return CPU._context.intFlags;
       }
+      else if (Common.BETWEEN(address, 0xFF10, 0xFF3F))
+      {
+         return APU.Read(address);
+      }
       else if (Common.BETWEEN(address, 0xFF40, 0xFF4B))
       {
          return LCD.Read(address);
@@ -66,6 +70,10 @@ public static class IO
       {
          CPU._context.intFlags = value;
          return;
+      }
+      else if (Common.BETWEEN(address, 0xFF10, 0xFF3F))
+      {
+         APU.Write(address, value);
       }
       else if (Common.BETWEEN(address, 0xFF40, 0xFF4B))
       {

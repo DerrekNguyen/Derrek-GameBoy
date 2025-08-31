@@ -36,6 +36,7 @@ public static class Emulator
       Timer.Init();
       CPU.Init();
       PPU.Init();
+      APU.Init();
 
       _context.Paused = false;
       _context.Running = true;

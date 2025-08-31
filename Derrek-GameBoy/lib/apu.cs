@@ -197,7 +197,7 @@ public static class APU
    public static byte NR50, NR51, NR52; // Sound control registers
    public static byte leftVolume => (byte)((NR50 & 0x70) >> 4);
    public static byte rightVolume => (byte)(NR50 & 0x07);
-   public static byte leftEnable => (byte)(NR51 >> 4);
+   public static byte leftEnable => (byte)(NR51 & 0xF0);
    public static byte rightEnable => (byte)(NR51 & 0x0F);
 
    public static PulseChannel1 Channel1 = new PulseChannel1();
@@ -221,7 +221,7 @@ public static class APU
    public static SDL2.SDL.SDL_AudioSpec audioSpec;
    public static bool enabled = false; 
 
-   static APU()
+   public static void Init()
    {
       audioSpec = new SDL2.SDL.SDL_AudioSpec
       {
@@ -460,10 +460,10 @@ public static class APU
 
          // Right
          bufferIn0 = 0;
-         volume = (128 * leftVolume) / 7; // Scale 0-7 to 0-128
+         volume = (128 * rightVolume) / 7; // Scale 0-7 to 0-128
          unsafe
          {
-            if ((leftEnable & 0x01) != 0)
+            if ((rightEnable & 0x01) != 0)
             {
                bufferIn1 = ((float)Channel1.Sample()) / 100;
                float* dst = &bufferIn0;
@@ -476,7 +476,7 @@ public static class APU
                   volume
                );
             }
-            if ((leftEnable & 0x02) != 0)
+            if ((rightEnable & 0x02) != 0)
             {
                bufferIn1 = ((float)Channel2.Sample()) / 100;
                float* dst = &bufferIn0;
@@ -489,7 +489,7 @@ public static class APU
                   volume
                );
             }
-            if ((leftEnable & 0x04) != 0)
+            if ((rightEnable & 0x04) != 0)
             {
                bufferIn1 = ((float)Channel3.Sample()) / 100;
                float* dst = &bufferIn0;
@@ -502,7 +502,7 @@ public static class APU
                   volume
                );
             }
-            if ((leftEnable & 0x08) != 0)
+            if ((rightEnable & 0x08) != 0)
             {
                bufferIn1 = ((float)Channel4.Sample()) / 100;
                float* dst = &bufferIn0;
@@ -532,7 +532,7 @@ public static class APU
          {
             fixed (float* p = mainBuffer)
             {
-               SDL2.SDL.SDL_QueueAudio(1, (byte)p, sampleSize * sizeof(float));
+               SDL2.SDL.SDL_QueueAudio(1, (IntPtr)p, sampleSize * sizeof(float));
             }
          }
       }
