@@ -15,3 +15,5 @@ Progress (08/11):
 Full product (without sound):
 <img width="1441" height="995" alt="image" src="https://github.com/user-attachments/assets/e3ec8ef5-9db8-4037-80fc-f3120f3c95e5" />
 
+Sound implemented (08/30)
+<img width="892" height="933" alt="image" src="https://github.com/user-attachments/assets/68cef748-4fa1-4c6e-a0a7-ebc1a6a5d93e" />
