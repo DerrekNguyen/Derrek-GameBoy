@@ -31,7 +31,7 @@ public static class Common
    }
 
    /// <summary>
-   /// Check whether a is between b and c
+   /// Check whether a is between b and c. Inclusive.
    /// </summary>
    /// <typeparam name="T">the type of a, b and c</typeparam>
    /// <param name="a">target variable</param>

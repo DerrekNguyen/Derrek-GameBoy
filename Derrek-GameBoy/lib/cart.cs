@@ -66,11 +66,20 @@ public static class Cart
       return false;
    }
 
+   public static bool CartMBC2()
+   {
+      if (_cartContext.Header is RomHeader header)
+      {
+         return Common.BETWEEN(header.Type, 5, 6);
+      }
+      return false;
+   }
+
    public static bool CartBattery()
    {
       if (_cartContext.Header is RomHeader header)
       {
-         return header.Type == 3;
+         return header.Type == 3 || header.Type == 6;
       }
       return false;
    }
@@ -270,13 +279,24 @@ public static class Cart
       }
    }
 
-   public static byte CartRead(ushort address)
+   /// <summary>
+   /// Helper function to validate cart read address.
+   /// </summary>
+   /// <param name="address"></param>
+   /// <returns>"true" if address is within boundary, "false" otherwise</returns>
+   private static bool ValidAddress(ushort address)
    {
-      if (!CartMBC1() || address < 0x4000)
-      {
-         return _cartContext.RomData[address];
-      }
+      return (address >= 0x0000 && address <= 0xBFFF);
+   }
 
+   /// <summary>
+   /// Helper function to read from MBC1 cart.
+   /// </summary>
+   /// <param name="address"></param>
+   /// <returns>ROM/RAM data from that address</returns>
+   private static byte CartMBC1Read(ushort address)
+   {
+      // External RAM range (A000-BFFF)
       if ((address & 0xE000) == 0xA000)
       {
          if (!_cartContext.RamEnabled || _cartContext.RamBank == null)
@@ -285,77 +305,145 @@ public static class Cart
          return _cartContext.RamBank[address - 0xA000];
       }
 
+      // ROM Bank 01-7F range (4000-7FFF)
       return _cartContext.RomData[address - 0x4000 + _cartContext.RomBankXOffset];
+   }
+
+   /// <summary>
+   /// Helper function to read from MBC1 cart.
+   /// </summary>
+   /// <param name="address"></param>
+   /// <returns>ROM/RAM data from that address</returns>
+   private static byte CartMBC2Read(ushort address)
+   {
+      // ROM Bank 01-0F range (4000-7FFF)
+      if ((Common.BETWEEN(address, 0x4000, 0x7FFF)))
+      {
+         return _cartContext.RomData[address - 0x4000 + _cartContext.RomBankXOffset];
+      };
+
+      // Built-in RAM range (A000-A1FF)
+      if (Common.BETWEEN(address, 0xA000, 0xA1FF))
+      {
+         if (!_cartContext.RamEnabled || _cartContext.RamBank == null)
+            return 0xFF;
+
+         return _cartContext.RamBank[address - 0xA000];
+      }
+
+      // 15 "echoes" of A000-A1FF in A200-BFFF
+      return _cartContext.RomData[address - 0x4000 + _cartContext.RomBankXOffset];
+   }
+
+   public static byte CartRead(ushort address)
+   {
+      if (!ValidAddress(address))
+      {
+         return 0xFF;
+      }
+
+      // Direct read if no MBC or address in 0x0000-0x3FFF
+      if ((!Cart.CartMBC1() && !Cart.CartMBC2()) || address < 0x4000)
+      {
+         return _cartContext.RomData[address];
+      }
+
+      // MBC1 Read
+      if (Cart.CartMBC1())
+      {
+         return CartMBC1Read(address);
+      }
+
+      // MBC2 Read
+      return Cart.CartMBC2Read(address);
    }
 
 
    public static void CartWrite(UInt16 address, byte value) 
    {
-      if (!Cart.CartMBC1())
+      if (!Cart.CartMBC1() && !Cart.CartMBC2())
       {
          return;
       }
 
-      if (address < 0x2000)
+      if (Cart.CartMBC1())
       {
-         _cartContext.RamEnabled = ((value & 0xF) == 0xA);
-      }
-
-      if ((address & 0xE000) == 0x2000)
-      {
-         // Rom bank number
-         if (value == 0)
+         if (address < 0x2000)
          {
-            value = 1;
+            _cartContext.RamEnabled = ((value & 0xF) == 0xA);
          }
 
-         value &= 0b11111;
-
-         _cartContext.RomBankValue = value;
-         _cartContext.RomBankXOffset = 0x4000 * _cartContext.RomBankValue;
-      }
-
-      if ((address & 0xE000) == 0x4000)
-      {
-         // Ram bank number
-         _cartContext.RamBankValue = (byte)(value & 0b11);
-
-         if (_cartContext.RamBanking)
+         if ((address & 0xE000) == 0x2000)
          {
-            if (_cartContext.NeedSave)
+            // Rom bank number
+            if (value == 0)
             {
-               Cart.CartBatterySave();
+               value = 1;
             }
 
-            _cartContext.RamBank = _cartContext.RamBanks[_cartContext.RamBankValue];
+            value &= 0b11111;
+
+            _cartContext.RomBankValue = value;
+            _cartContext.RomBankXOffset = 0x4000 * _cartContext.RomBankValue;
+         }
+
+         if ((address & 0xE000) == 0x4000)
+         {
+            // Ram bank number
+            _cartContext.RamBankValue = (byte)(value & 0b11);
+
+            if (_cartContext.RamBanking)
+            {
+               if (_cartContext.NeedSave)
+               {
+                  Cart.CartBatterySave();
+               }
+
+               _cartContext.RamBank = _cartContext.RamBanks[_cartContext.RamBankValue];
+            }
+         }
+
+         if ((address & 0xE000) == 0x6000)
+         {
+            // Banking mode select
+            _cartContext.BankingMode = (byte)(value & 1);
+            _cartContext.RamBanking = _cartContext.BankingMode != 0;
+
+            if (_cartContext.RamBanking)
+            {
+               _cartContext.RamBank = _cartContext.RamBanks[_cartContext.RamBankValue];
+            }
+         }
+
+         if ((address & 0xE000) == 0xA000)
+         {
+            if (!_cartContext.RamEnabled)
+               return;
+            if (_cartContext.RamBank == null)
+               return;
+
+            _cartContext.RamBank[address - 0xA000] = value;
+
+
+            if (_cartContext.Battery)
+            {
+               _cartContext.NeedSave = true;
+            }
          }
       }
 
-      if ((address & 0xE000) == 0x6000)
+      // TODO: MBC2 Write.
+      if (Cart.CartMBC2())
       {
-         // Banking mode select
-         _cartContext.BankingMode = (byte)(value & 1);
-         _cartContext.RamBanking = _cartContext.BankingMode != 0;
-
-         if (_cartContext.RamBanking)
+         // Bit 8 is clear
+         if ((address & 0x0100) == 0x0100)
          {
-            _cartContext.RamBank = _cartContext.RamBanks[_cartContext.RamBankValue];
+            _cartContext.RamEnabled = ((value & 0xF) == 0xA);
          }
-      }
-
-      if ((address & 0xE000) == 0xA000)
-      {
-         if (!_cartContext.RamEnabled)
-            return;
-         if (_cartContext.RamBank == null)
-            return;
-
-         _cartContext.RamBank[address - 0xA000] = value;
-
-
-         if (_cartContext.Battery)
+         // Bit 8 is set
+         else
          {
-            _cartContext.NeedSave = true;
+            
          }
       }
    }
