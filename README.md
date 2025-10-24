@@ -6,6 +6,7 @@ References:
 - https://www.youtube.com/playlist?list=PLVxiWMqQvhg_yk4qy2cSC3457wZJga_e5
 - https://gbdev.io/pandocs/Serial_Data_Transfer_(Link_Cable).html
 - https://github.com/rockytriton/LLD_gbemu
+- https://github.com/GhostSonic21/GhostBoy/tree/master
 - https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
 - https://nightshade256.github.io/2021/03/27/gb-sound-emulation.html
 
