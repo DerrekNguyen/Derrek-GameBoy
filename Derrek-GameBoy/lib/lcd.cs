@@ -183,7 +183,7 @@ public static class LCD
          case 0x01: _context.lcds = value; break;
          case 0x02: _context.scrollY = value; break;
          case 0x03: _context.scrollX = value; break;
-         case 0x04: _context.ly = value; break;
+         case 0x04: break; // read-only
          case 0x05: _context.lyCompare = value; break;
          case 0x06: _context.dma = value; break;
          case 0x07: _context.bgPalette = value; break;

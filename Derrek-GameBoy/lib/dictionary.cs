@@ -107,6 +107,7 @@ public static class LookUp
       [0x96] = "Yonezawa/s’pal",
       [0x97] = "Kaneko",
       [0x99] = "Pack in soft",
-      [0xA4] = "Konami (Yu-Gi-Oh!)"
+      [0xA4] = "Konami (Yu-Gi-Oh!)",
+      [0xC3] = "Square"
    };
 }

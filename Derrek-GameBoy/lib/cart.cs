@@ -100,6 +100,13 @@ public static class Cart
 
       if (header.NewLicenseCode <= 0xA4)
       {
+         if (header.LicenseCode == 0x33)
+         {
+            // new License Code
+            return LookUp.LIC_CODE[(byte)header.NewLicenseCode];
+         }
+
+         // old License Code
          return LookUp.LIC_CODE[header.LicenseCode];
       }
 
@@ -358,7 +365,6 @@ public static class Cart
       return Cart.CartMBC2Read(address);
    }
 
-
    public static void CartWrite(UInt16 address, byte value) 
    {
       if (!Cart.CartMBC1() && !Cart.CartMBC2())
@@ -432,18 +438,26 @@ public static class Cart
          }
       }
 
-      // TODO: MBC2 Write.
       if (Cart.CartMBC2())
       {
          // Bit 8 is clear
-         if ((address & 0x0100) == 0x0100)
+         if ((address & 0x0100) == 0)
          {
             _cartContext.RamEnabled = ((value & 0xF) == 0xA);
          }
          // Bit 8 is set
          else
          {
-            
+            // Rom bank number
+            if (value == 0)
+            {
+               value = 1;
+            }
+
+            value &= 0x0F;
+
+            _cartContext.RomBankValue = value;
+            _cartContext.RomBankXOffset = 0x4000 * _cartContext.RomBankValue;
          }
       }
    }
