@@ -396,7 +396,6 @@ public static class APU
       {
          downSampleCounter = 95;
 
-         // TODO: Mix and output audio samples
          // Left
          float bufferIn0 = 0;
          float bufferIn1 = 0;

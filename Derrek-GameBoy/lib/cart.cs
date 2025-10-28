@@ -23,6 +23,115 @@ public unsafe struct RomHeader
    public UInt16 GlobalChecksum;
 }
 
+/// <summary>
+/// Real Time Clock (for MBC3)
+/// </summary>
+public class RTC
+{
+   // Real time values
+   public byte RealSeconds;
+   public byte RealMinutes;
+   public byte RealHours;
+
+   private UInt16 RealDayCounter;
+   public bool RealHalt;
+   public bool RealCarry;
+
+   public byte RealDayLower
+   {
+      get { return (byte)(RealDayCounter & 0xFF); }
+      set { RealDayCounter = (UInt16)((RealDayCounter & 0xFF00) | value); }
+   }
+   public byte RealDayUpper
+   {
+      get
+      {
+         byte result = 0;
+         result |= (byte)((RealDayCounter >> 8) & 0x01);
+         if (RealHalt) result |= 0x40;
+         if (RealCarry) result |= 0x80;
+         return result;
+      }
+      set
+      {
+         RealHalt = (value & 0x40) != 0;
+         RealCarry = (value & 0x80) != 0;
+         if ((value & 0x01) != 0)
+         {
+            RealDayCounter |= 0x0100;
+         }
+         else
+         {
+            RealDayCounter &= 0xFEFF;
+         }
+      }
+   }
+   public UInt16 GetRealDay()
+   {
+      return (ushort)(RealDayCounter & 0x01FF);
+   }
+
+   // Latched values
+   public byte LatchSeconds;
+   public byte LatchMinutes;
+   public byte LatchHours;
+
+   private UInt16 LatchDayCounter;
+   public bool LatchHalt;
+   public bool LatchCarry;
+
+   public byte LatchDayLower
+   {
+      get { return (byte)(LatchDayCounter & 0xFF); }
+      set { LatchDayCounter = (UInt16)((LatchDayCounter & 0xFF00) | value); }
+   }
+   public byte LatchDayUpper
+   {
+      get {
+         byte result = 0;
+         result |= (byte)((LatchDayCounter >> 8) & 0x01);
+         if (LatchHalt) result |= 0x40;
+         if (LatchCarry) result |= 0x80;
+         return result;
+      }
+      set
+      {
+         LatchHalt = (value & 0x40) != 0;
+         LatchCarry = (value & 0x80) != 0;
+         if ((value & 0x01) != 0)
+         {
+            LatchDayCounter |= 0x0100;
+         } else
+         {
+            LatchDayCounter &= 0xFEFF;
+         }
+      }
+   }
+   public UInt16 GetLatchDay()
+   {
+      return (UInt16)(LatchDayCounter & 0x01FF);
+   }
+
+   // The current time since the last update
+   public TimeSpan CurrentTime;
+
+   // Methods
+   public void UpdateTimer()
+   {
+      // We using epoch to calculate elapsed time. That way it can only either go up or stay still
+      TimeSpan newTime = DateTime.UtcNow - DateTime.UnixEpoch;
+
+      // Return if halted, or if we somehow stopped time
+      if (newTime == CurrentTime || RealHalt) return;
+      CurrentTime = newTime;
+
+      // TODO: Continue with this implementation
+      UInt32 elapsedSeconds = (UInt32)((newTime - CurrentTime).TotalSeconds);
+      RealSeconds = (byte)((RealSeconds + elapsedSeconds) % 60);
+   }
+}
+
+
 public class CartContext
 {
    public string Filename = string.Empty;
@@ -46,6 +155,10 @@ public class CartContext
    // For battery
    public bool Battery; // Has battery
    public bool NeedSave; // Should save battery backup
+
+   // For MBC3 RTC
+   public bool timerPresent = false;
+   public RTC? _RTC = null;
 }
 
 public static class Cart
@@ -57,6 +170,12 @@ public static class Cart
       return _cartContext.NeedSave;
    }
 
+   /// <summary>
+   /// Verify if cart is MBC1
+   /// </summary>
+   /// <returns>
+   /// true if MBC1, false otherwise
+   /// </returns>
    public static bool CartMBC1()
    {
       if (_cartContext.Header is RomHeader header)
@@ -66,6 +185,12 @@ public static class Cart
       return false;
    }
 
+   /// <summary>
+   /// Verify if cart is MBC2
+   /// </summary>
+   /// <returns>
+   /// true if MBC2, false otherwise
+   /// </returns>
    public static bool CartMBC2()
    {
       if (_cartContext.Header is RomHeader header)
@@ -73,6 +198,27 @@ public static class Cart
          return Common.BETWEEN(header.Type, 5, 6);
       }
       return false;
+   }
+
+   /// <summary>
+   /// Verify if cart is MBC3
+   /// </summary>
+   /// <returns>
+   /// <list type="bullet">
+   /// <item><description><c>0</c> — Not MBC3</description></item>
+   /// <item><description><c>1</c> — MBC3 without RTC</description></item>
+   /// <item><description><c>2</c> — MBC3 with RTC</description></item>
+   /// </list>
+   /// </returns>
+   public static int CartMBC3() 
+   {
+      int ret = 0;
+      if (_cartContext.Header is RomHeader header)
+      {
+         if (Common.BETWEEN(header.Type, 0x0F, 0x13)) ret++; // MBC3
+         if (Common.BETWEEN(header.Type, 0x0F, 0x10)) ret++; // RTC
+      }
+      return ret;
    }
 
    public static bool CartBattery()
@@ -234,6 +380,13 @@ public static class Cart
          Cart.CartBatteryLoad();
       }
 
+      // RTC for MBC3 (if exists)
+      if (Cart.CartMBC3() == 2)
+      {
+         _cartContext.timerPresent = true;
+         _cartContext._RTC = new RTC();
+      }
+
       return true;
    }
 
@@ -312,7 +465,7 @@ public static class Cart
          return _cartContext.RamBank[address - 0xA000];
       }
 
-      // ROM Bank 01-7F range (4000-7FFF)
+      // ROM Bank (0000-7FFF)
       return _cartContext.RomData[address - 0x4000 + _cartContext.RomBankXOffset];
    }
 
@@ -323,12 +476,6 @@ public static class Cart
    /// <returns>ROM/RAM data from that address</returns>
    private static byte CartMBC2Read(ushort address)
    {
-      // ROM Bank 01-0F range (4000-7FFF)
-      if ((Common.BETWEEN(address, 0x4000, 0x7FFF)))
-      {
-         return _cartContext.RomData[address - 0x4000 + _cartContext.RomBankXOffset];
-      };
-
       // Built-in RAM range (A000-A1FF)
       if (Common.BETWEEN(address, 0xA000, 0xA1FF))
       {
@@ -338,40 +485,77 @@ public static class Cart
          return _cartContext.RamBank[address - 0xA000];
       }
 
-      // 15 "echoes" of A000-A1FF in A200-BFFF
+      // ROM Bank (0000-7FFF)
+      return _cartContext.RomData[address - 0x4000 + _cartContext.RomBankXOffset];
+   }
+
+   private static byte CartMBC3Read(ushort address)
+   {
+      // RAM Bank or RTC range (A000-BFFF)
+      if (Common.BETWEEN(address, 0xA000, 0xBFFF))
+      {
+         if (_cartContext.RamEnabled)
+         {
+            // Read from RAM Bank
+            if (_cartContext.RamBank != null && _cartContext.RamBankValue < 4)
+            {
+               return _cartContext.RamBank[address - 0xA000];
+            }
+            // RTC register
+            else if (_cartContext.timerPresent &&
+               _cartContext._RTC != null &&
+               Common.BETWEEN(_cartContext.RamBankValue, 0x08, 0x0C))
+            {
+               switch (_cartContext.RamBankValue)
+               {
+                  case 0x08:
+                     // Seconds
+                     return _cartContext._RTC.LatchSeconds;
+                  case 0x09:
+                     // Minutes
+                     return _cartContext._RTC.LatchMinutes;
+                  case 0x0A:
+                     // Hours
+                     return _cartContext._RTC.LatchHours;
+                  case 0x0B:
+                     // Lower 8 bits of Day Counter
+                     return _cartContext._RTC.LatchDayLower;
+                  case 0x0C:
+                     // Upper Day Counter, Half, Carry
+                     return _cartContext._RTC.LatchDayUpper;
+               }
+            }
+         }
+         return 0xFF;
+      }
+
+      // ROM Bank (0000-7FFF)
       return _cartContext.RomData[address - 0x4000 + _cartContext.RomBankXOffset];
    }
 
    public static byte CartRead(ushort address)
    {
       if (!ValidAddress(address))
-      {
          return 0xFF;
-      }
 
       // Direct read if no MBC or address in 0x0000-0x3FFF
-      if ((!Cart.CartMBC1() && !Cart.CartMBC2()) || address < 0x4000)
-      {
+      if ((!Cart.CartMBC1() && !Cart.CartMBC2() && Cart.CartMBC3() == 0) || address < 0x4000)
          return _cartContext.RomData[address];
-      }
 
       // MBC1 Read
       if (Cart.CartMBC1())
-      {
          return CartMBC1Read(address);
-      }
 
       // MBC2 Read
-      return Cart.CartMBC2Read(address);
+      if (Cart.CartMBC2())
+         return Cart.CartMBC2Read(address);
+
+      // MBC3 Read
+      return Cart.CartMBC3Read(address);
    }
 
-   public static void CartWrite(UInt16 address, byte value) 
+   public static void CartWrite(UInt16 address, byte value)
    {
-      if (!Cart.CartMBC1() && !Cart.CartMBC2())
-      {
-         return;
-      }
-
       if (Cart.CartMBC1())
       {
          if (address < 0x2000)
@@ -438,7 +622,7 @@ public static class Cart
          }
       }
 
-      if (Cart.CartMBC2())
+      else if (Cart.CartMBC2())
       {
          // Bit 8 is clear
          if ((address & 0x0100) == 0)
@@ -460,5 +644,43 @@ public static class Cart
             _cartContext.RomBankXOffset = 0x4000 * _cartContext.RomBankValue;
          }
       }
+
+      // TODO: MBC3 Write
+      else if (Cart.CartMBC3() > 0)
+      {
+         // RAM and Timer Enable
+         if (Common.BETWEEN(address, 0x0000, 0x1FFF))
+         {
+            _cartContext.RamEnabled = ((value & 0x0F) == 0x0A);
+         }
+
+         // ROM Bank Number
+         else if (Common.BETWEEN(address, 0x2000, 0x3FFF))
+         {
+            if (value == 0)
+            {
+               value = 1;
+            }
+
+            value &= 0x7F;
+            _cartContext.RomBankValue = value;
+            _cartContext.RomBankXOffset = 0x4000 * _cartContext.RomBankValue;
+
+         }
+
+         // RAM Bank Number / RTC Register Select
+         else if (Common.BETWEEN(address, 0x4000, 0x5FFF))
+         {
+            _cartContext.RamBankValue = (byte)(value % 0x0D);
+         }
+
+         // Latch Clock Data
+         else if (Common.BETWEEN(address, 0x6000, 0x7FFF))
+         {
+
+         }
+      }
+
+      return;
    }
 }

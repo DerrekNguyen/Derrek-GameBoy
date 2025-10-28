@@ -10,7 +10,7 @@ class Program
    }
    static void Main()
    {
-      String[] args = [GetRomPath("finalfantasy.gb")];
+      String[] args = [GetRomPath("pokemonred.gb")];
       Emulator.EmuRun(args);
    }
 }
