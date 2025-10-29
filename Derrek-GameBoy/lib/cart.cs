@@ -115,9 +115,6 @@ public class RTC
    // The current time since the last update
    public TimeSpan CurrentTime;
 
-   // Checks the last write to the latch register (latch happens from low to high)
-   public bool Latch = false;
-
    // Methods
    public void UpdateTimer()
    {
@@ -125,9 +122,9 @@ public class RTC
       TimeSpan newTime = DateTime.UtcNow - DateTime.UnixEpoch;
       UInt32 elapsedSeconds = (UInt32)(newTime - CurrentTime).TotalSeconds;
 
+      CurrentTime = newTime;
       // Return if halted, or if we somehow stopped time
       if (elapsedSeconds <= 0 || RealHalt) return;
-      CurrentTime = newTime;
 
       RealSeconds = (byte)((RealSeconds + elapsedSeconds) % 60);
       RealMinutes = (byte)((RealMinutes + (elapsedSeconds / 60)) % 60);
@@ -155,7 +152,6 @@ public class RTC
    }
 }
 
-
 public class CartContext
 {
    public string Filename = string.Empty;
@@ -182,7 +178,8 @@ public class CartContext
 
    // For MBC3 RTC
    public bool timerPresent = false;
-   public RTC? _RTC = null;
+   public RTC? _RTC = null;   
+   public bool Latch = false; // Checks the last write to the latch register (latch happens from low to high)
 }
 
 public static class Cart
@@ -249,7 +246,17 @@ public static class Cart
    {
       if (_cartContext.Header is RomHeader header)
       {
-         return header.Type == 3 || header.Type == 6;
+         switch (header.Type)
+         {
+            case 0x03: // MBC1 + RAM + Battery
+            case 0x06: // MBC2 + Battery
+            case 0x0F: // MBC3 + Timer + Battery
+            case 0x10: // MBC3 + Timer + RAM + Battery
+            case 0x13: // MBC3 + RAM + Battery
+            case 0x1B: // MBC5 + RAM + Battery
+            case 0x1E: // MBC5 + RAM + Battery
+               return true;
+         }
       }
       return false;
    }
@@ -414,6 +421,10 @@ public static class Cart
       return true;
    }
 
+   /// <summary>
+   /// Load battery from file.<br/>
+   /// Structure: [bank0][bank1][bank2]...[bank15][RTC bytes (optional)]
+   /// </summary>
    public static void CartBatteryLoad()
    {
       if (_cartContext.RamBank == null)
@@ -428,7 +439,29 @@ public static class Cart
       {
          using (var fs = new FileStream(fn, FileMode.Open, FileAccess.Read))
          {
-            fs.Read(_cartContext.RamBank, 0, 0x2000);
+            for (int i = 0; i < 16; i++)
+            {
+               if (_cartContext.RamBanks[i] != null)
+               {
+                  fs.Read(_cartContext.RamBanks[i], 0, 0x2000);
+               }
+               else
+               {
+                  fs.Seek(0x2000, SeekOrigin.Current); // skip over that portion
+               }
+            }
+
+            // Load RTC data if present
+            if (Cart.CartMBC3() > 0 && _cartContext.timerPresent && _cartContext._RTC != null)
+            {
+               _cartContext._RTC.RealSeconds = (byte)fs.ReadByte();
+               _cartContext._RTC.RealMinutes = (byte)fs.ReadByte();
+               _cartContext._RTC.RealHours = (byte)fs.ReadByte();
+               _cartContext._RTC.RealDayLower = (byte)fs.ReadByte();
+               _cartContext._RTC.RealDayUpper = (byte)fs.ReadByte();
+
+               _cartContext._RTC.UpdateTimer();
+            }
          }
       }
       catch (Exception e)
@@ -439,6 +472,10 @@ public static class Cart
       }
    }
 
+   /// <summary>
+   /// Save battery to file.<br/>
+   /// Structure: [bank0][bank1][bank2]...[bank15][RTC bytes (optional)]
+   /// </summary>
    public static void CartBatterySave()
    {
       if (_cartContext.RamBank == null)
@@ -453,7 +490,29 @@ public static class Cart
       {
          using (var fs = new FileStream(fn, FileMode.Create, FileAccess.Write))
          {
-            fs.Write(_cartContext.RamBank, 0, 0x2000);
+            for (int i = 0; i < 16; i++)
+            {
+               if (_cartContext.RamBanks[i] != null)
+               {
+                  fs.Write(_cartContext.RamBanks[i], 0, 0x2000);
+               }
+               else
+               {
+                  // write blank data for missing banks to keep consistent file size
+                  fs.Write(new byte[0x2000], 0, 0x2000);
+               }
+            }
+
+
+            // Save RTC data if present
+            if (Cart.CartMBC3() > 0 && _cartContext.timerPresent && _cartContext._RTC != null)
+            {
+               fs.WriteByte(_cartContext._RTC.RealSeconds);
+               fs.WriteByte(_cartContext._RTC.RealMinutes);
+               fs.WriteByte(_cartContext._RTC.RealHours);
+               fs.WriteByte(_cartContext._RTC.RealDayLower);
+               fs.WriteByte(_cartContext._RTC.RealDayUpper);
+            }
          }
       } catch (Exception e)
       {
@@ -494,7 +553,7 @@ public static class Cart
    }
 
    /// <summary>
-   /// Helper function to read from MBC1 cart.
+   /// Helper function to read from MBC2 cart.
    /// </summary>
    /// <param name="address"></param>
    /// <returns>ROM/RAM data from that address</returns>
@@ -513,6 +572,11 @@ public static class Cart
       return _cartContext.RomData[address - 0x4000 + _cartContext.RomBankXOffset];
    }
 
+   /// <summary>
+   /// Helper function to read from MBC3 cart.
+   /// </summary>
+   /// <param name="address"></param>
+   /// <returns>ROM/RAM - RTC data from that address</returns>
    private static byte CartMBC3Read(ushort address)
    {
       // RAM Bank or RTC range (A000-BFFF)
@@ -675,6 +739,10 @@ public static class Cart
          // RAM and Timer Enable
          if (Common.BETWEEN(address, 0x0000, 0x1FFF))
          {
+            if (_cartContext.Battery && _cartContext.NeedSave && ((value & 0x0F) != 0x0A) && _cartContext.RamEnabled)
+            {
+               Cart.CartBatterySave();
+            }
             _cartContext.RamEnabled = ((value & 0x0F) == 0x0A);
          }
 
@@ -701,11 +769,12 @@ public static class Cart
          // Latch Clock Data
          else if (Common.BETWEEN(address, 0x6000, 0x7FFF))
          {
-            if (_cartContext.timerPresent && !_cartContext._RTC.Latch && (value & 0x01) == 0x01)
+            if (_cartContext.timerPresent && !_cartContext.Latch && (value & 0x01) == 0x01)
             {
                _cartContext._RTC.LatchClock();
+               _cartContext.NeedSave = true;
             }
-            _cartContext._RTC.Latch = (value & 0x01) == 0x01;
+            _cartContext.Latch = (value & 0x01) == 0x01;
          }
 
          else if (Common.BETWEEN(address, 0xA000, 0xBFFF))
