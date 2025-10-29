@@ -115,19 +115,43 @@ public class RTC
    // The current time since the last update
    public TimeSpan CurrentTime;
 
+   // Checks the last write to the latch register (latch happens from low to high)
+   public bool Latch = false;
+
    // Methods
    public void UpdateTimer()
    {
       // We using epoch to calculate elapsed time. That way it can only either go up or stay still
       TimeSpan newTime = DateTime.UtcNow - DateTime.UnixEpoch;
+      UInt32 elapsedSeconds = (UInt32)(newTime - CurrentTime).TotalSeconds;
 
       // Return if halted, or if we somehow stopped time
-      if (newTime == CurrentTime || RealHalt) return;
+      if (elapsedSeconds <= 0 || RealHalt) return;
       CurrentTime = newTime;
 
-      // TODO: Continue with this implementation
-      UInt32 elapsedSeconds = (UInt32)((newTime - CurrentTime).TotalSeconds);
       RealSeconds = (byte)((RealSeconds + elapsedSeconds) % 60);
+      RealMinutes = (byte)((RealMinutes + (elapsedSeconds / 60)) % 60);
+      RealHours = (byte)((RealHours + (elapsedSeconds / 3600)) % 24);
+
+      UInt32 daysToAdd = GetRealDay() + elapsedSeconds / 86400;
+      
+      RealDayLower = (byte)(daysToAdd & 0xFF);
+      RealDayUpper = (byte)((daysToAdd >> 8) & 0x01);
+      if (RealDayCounter > 511)
+      {
+         RealDayCounter %= 512;
+         RealCarry = true;
+      }
+   }
+
+   public void LatchClock()
+   {
+      UpdateTimer();
+      LatchSeconds = RealSeconds;
+      LatchMinutes = RealMinutes;
+      LatchHours = RealHours;
+      LatchDayLower = RealDayLower;
+      LatchDayUpper = RealDayUpper;
    }
 }
 
@@ -589,7 +613,7 @@ public static class Cart
                   Cart.CartBatterySave();
                }
 
-               _cartContext.RamBank = _cartContext.RamBanks[_cartContext.RamBankValue];
+               _cartContext.RamBank = _cartContext.RamBanks[_cartContext.RamBankValue];   
             }
          }
 
@@ -677,7 +701,57 @@ public static class Cart
          // Latch Clock Data
          else if (Common.BETWEEN(address, 0x6000, 0x7FFF))
          {
+            if (_cartContext.timerPresent && !_cartContext._RTC.Latch && (value & 0x01) == 0x01)
+            {
+               _cartContext._RTC.LatchClock();
+            }
+            _cartContext._RTC.Latch = (value & 0x01) == 0x01;
+         }
 
+         else if (Common.BETWEEN(address, 0xA000, 0xBFFF))
+         {
+            if (!_cartContext.RamEnabled)
+               return;
+
+            // Write to RAM Bank
+            if (_cartContext.RamBank != null && _cartContext.RamBankValue < 4)
+            {
+               _cartContext.RamBank[address - 0xA000] = value;
+               if (_cartContext.Battery)
+               {
+                  _cartContext.NeedSave = true;
+               }
+            }
+
+            // RTC register
+            else if (_cartContext.timerPresent &&
+               _cartContext._RTC != null &&
+               Common.BETWEEN(_cartContext.RamBankValue, 0x08, 0x0C))
+            {
+               switch (_cartContext.RamBankValue)
+               {
+                  case 0x08:
+                     // Seconds
+                     _cartContext._RTC.RealSeconds = value;
+                     break;
+                  case 0x09:
+                     // Minutes
+                     _cartContext._RTC.RealMinutes = value;
+                     break;
+                  case 0x0A:
+                     // Hours
+                     _cartContext._RTC.RealHours = value;
+                     break;
+                  case 0x0B:
+                     // Lower 8 bits of Day Counter
+                     _cartContext._RTC.RealDayLower = value;
+                     break;
+                  case 0x0C:
+                     // Upper Day Counter, Half, Carry
+                     _cartContext._RTC.RealDayUpper = value;
+                     break;
+               }
+            }
          }
       }
 
